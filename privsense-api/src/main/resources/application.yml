@@ -1,0 +1,45 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /privsense
+
+spring:
+  application:
+    name: privsense
+
+# PrivSense specific configurations
+privsense:
+  async:
+    core-pool-size: 4
+    max-pool-size: 8
+    queue-capacity: 100
+    thread-name-prefix: privsense-async-
+  
+  sampling:
+    default-size: 1000
+    max-concurrent-db-queries: 5
+    methods:
+      default: RANDOM
+  
+  detection:
+    thresholds:
+      heuristic: 0.7
+      regex: 0.8
+      ner: 0.6
+      reporting: 0.5
+    stop-pipeline-on-high-confidence: true
+  
+  ner:
+    service:
+      url: http://localhost:8000/detect-pii
+      timeout-seconds: 30
+      circuit-breaker:
+        enabled: true
+        failure-threshold: 5
+        reset-timeout-seconds: 30
+
+logging:
+  level:
+    root: INFO
+    com.privsense: DEBUG
+    org.springframework.web: INFO

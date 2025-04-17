@@ -1,0 +1,69 @@
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.logs
+hs_err_pid*
+
+# IDE - IntelliJ
+.idea/
+*.iml
+*.iws
+*.ipr
+.idea_modules/
+out/
+
+# IDE - Eclipse
+.metadata
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.settings/
+.loadpath
+.recommenders
+.project
+.classpath
+
+# Logs
+logs/
+*.log
+log/
+
+# OS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Podman
+.env
+podman-volumes/
+
+
+#vscode
+.vscode/
+.vscode-test/
+.vscode-test-*
+
+workflow.md
+

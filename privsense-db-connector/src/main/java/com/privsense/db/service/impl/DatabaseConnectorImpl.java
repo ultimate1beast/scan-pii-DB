@@ -1,0 +1,255 @@
+package com.privsense.db.service.impl;
+
+import com.privsense.core.exception.DatabaseConnectionException;
+import com.privsense.core.model.DatabaseConnectionInfo;
+import com.privsense.core.service.DatabaseConnector;
+import com.privsense.db.config.DatabaseConnectionConfig;
+import com.privsense.db.service.JdbcDriverLoader;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import jakarta.annotation.PreDestroy;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Implementation of DatabaseConnector that manages database connections using HikariCP.
+ * It maintains a registry of connection pools keyed by connection ID.
+ */
+@Service
+public class DatabaseConnectorImpl implements DatabaseConnector {
+    
+    private static final Logger logger = LoggerFactory.getLogger(DatabaseConnectorImpl.class);
+    
+    private final JdbcDriverLoader jdbcDriverLoader;
+    private final DatabaseConnectionConfig connectionConfig;
+    
+    // Maps connection IDs to connection pools
+    private final Map<UUID, HikariDataSource> dataSources = new ConcurrentHashMap<>();
+    
+    // Maps connection IDs to connection info
+    private final Map<UUID, DatabaseConnectionInfo> connectionInfoMap = new ConcurrentHashMap<>();
+    
+    @Autowired
+    public DatabaseConnectorImpl(JdbcDriverLoader jdbcDriverLoader, DatabaseConnectionConfig connectionConfig) {
+        this.jdbcDriverLoader = jdbcDriverLoader;
+        this.connectionConfig = connectionConfig;
+    }
+    
+    @Override
+    public UUID connect(DatabaseConnectionInfo connectionInfo) {
+        Objects.requireNonNull(connectionInfo, "Connection info cannot be null");
+        
+        // Generate a unique ID for this connection
+        UUID connectionId = UUID.randomUUID();
+        
+        try {
+            // Load driver dynamically if specified
+            if (connectionInfo.getJdbcDriverClass() != null && !connectionInfo.getJdbcDriverClass().isEmpty()) {
+                boolean driverLoaded = jdbcDriverLoader.loadDriver(connectionInfo.getJdbcDriverClass());
+                
+                if (!driverLoaded) {
+                    throw new DatabaseConnectionException(
+                            "Failed to load JDBC driver: " + connectionInfo.getJdbcDriverClass());
+                }
+            }
+            
+            // Create a HikariCP configuration
+            HikariConfig config = createHikariConfig(connectionInfo);
+            
+            // Create a new data source for this connection
+            HikariDataSource dataSource = new HikariDataSource(config);
+            
+            // Test the connection to make sure it's valid
+            try (Connection connection = dataSource.getConnection()) {
+                if (!connection.isValid(5)) { // 5 seconds timeout
+                    throw new SQLException("Connection test failed");
+                }
+                
+                // Store additional database information for later reference
+                String dbProductName = connection.getMetaData().getDatabaseProductName();
+                String dbProductVersion = connection.getMetaData().getDatabaseProductVersion();
+                logger.info("Connected to {} {}", dbProductName, dbProductVersion);
+            }
+            
+            // Store the data source and connection info for later retrieval
+            dataSources.put(connectionId, dataSource);
+            
+            // Create a copy of the connection info without the password
+            DatabaseConnectionInfo safeConnectionInfo = DatabaseConnectionInfo.builder()
+                    .host(connectionInfo.getHost())
+                    .port(connectionInfo.getPort())
+                    .databaseName(connectionInfo.getDatabaseName())
+                    .username(connectionInfo.getUsername())
+                    .jdbcDriverClass(connectionInfo.getJdbcDriverClass())
+                    .sslEnabled(connectionInfo.getSslEnabled())
+                    .build();
+                    
+            connectionInfoMap.put(connectionId, safeConnectionInfo);
+            
+            logger.info("Database connection established: ID={}, URL={}", 
+                    connectionId, connectionInfo.buildJdbcUrl().replaceAll("password=.*?(&|$)", "password=***$1"));
+            
+            return connectionId;
+        } catch (SQLException e) {
+            throw new DatabaseConnectionException("Failed to establish database connection: " + e.getMessage(), e);
+        } catch (Exception e) {
+            throw new DatabaseConnectionException("Unexpected error during connection setup: " + e.getMessage(), e);
+        }
+    }
+    
+    @Override
+    public boolean disconnect(UUID connectionId) {
+        if (connectionId == null) {
+            return false;
+        }
+        
+        HikariDataSource dataSource = dataSources.remove(connectionId);
+        connectionInfoMap.remove(connectionId);
+        
+        if (dataSource != null) {
+            // Close the pool gracefully
+            try {
+                dataSource.close();
+                logger.info("Database connection closed: ID={}", connectionId);
+                return true;
+            } catch (Exception e) {
+                logger.error("Error closing database connection: ID={}", connectionId, e);
+            }
+        }
+        
+        return false;
+    }
+    
+    @Override
+    public Connection getConnection(UUID connectionId) {
+        if (connectionId == null) {
+            throw new DatabaseConnectionException("Connection ID cannot be null");
+        }
+        
+        HikariDataSource dataSource = dataSources.get(connectionId);
+        
+        if (dataSource == null) {
+            throw new DatabaseConnectionException("Connection not found: " + connectionId);
+        }
+        
+        try {
+            return dataSource.getConnection();
+        } catch (SQLException e) {
+            throw new DatabaseConnectionException("Failed to get connection from pool: " + e.getMessage(), e);
+        }
+    }
+    
+    @Override
+    public boolean isConnectionValid(UUID connectionId) {
+        if (connectionId == null || !dataSources.containsKey(connectionId)) {
+            return false;
+        }
+        
+        HikariDataSource dataSource = dataSources.get(connectionId);
+        
+        if (dataSource.isClosed()) {
+            return false;
+        }
+        
+        try (Connection connection = dataSource.getConnection()) {
+            return connection.isValid(5); // 5 seconds timeout
+        } catch (SQLException e) {
+            logger.warn("Connection validation failed: {}", e.getMessage());
+            return false;
+        }
+    }
+    
+    @Override
+    public DatabaseConnectionInfo getConnectionInfo(UUID connectionId) {
+        if (connectionId == null) {
+            throw new DatabaseConnectionException("Connection ID cannot be null");
+        }
+        
+        DatabaseConnectionInfo info = connectionInfoMap.get(connectionId);
+        
+        if (info == null) {
+            throw new DatabaseConnectionException("Connection not found: " + connectionId);
+        }
+        
+        return info; // Safe copy without password
+    }
+    
+    /**
+     * Creates a HikariConfig object from the provided DatabaseConnectionInfo
+     */
+    private HikariConfig createHikariConfig(DatabaseConnectionInfo connectionInfo) {
+        HikariConfig config = new HikariConfig();
+        
+        // JDBC URL
+        config.setJdbcUrl(connectionInfo.buildJdbcUrl());
+        
+        // Authentication
+        config.setUsername(connectionInfo.getUsername());
+        config.setPassword(connectionInfo.getPassword());
+        
+        // Pool configuration from our centralized config
+        DatabaseConnectionConfig.Pool pool = connectionConfig.getPool();
+        config.setConnectionTimeout(pool.getConnectionTimeout());
+        config.setIdleTimeout(pool.getIdleTimeout());
+        config.setMaxLifetime(pool.getMaxLifetime());
+        config.setMinimumIdle(pool.getMinimumIdle());
+        config.setMaximumPoolSize(pool.getMaximumPoolSize());
+        
+        // SSL configuration if enabled
+        if (connectionInfo.getSslEnabled() != null && connectionInfo.getSslEnabled()) {
+            Properties properties = new Properties();
+            properties.setProperty("useSSL", "true");
+            properties.setProperty("requireSSL", "true");
+            
+            if (connectionInfo.getSslTrustStorePath() != null && !connectionInfo.getSslTrustStorePath().isEmpty()) {
+                properties.setProperty("trustStore", connectionInfo.getSslTrustStorePath());
+            }
+            
+            if (connectionInfo.getSslTrustStorePassword() != null && !connectionInfo.getSslTrustStorePassword().isEmpty()) {
+                properties.setProperty("trustStorePassword", connectionInfo.getSslTrustStorePassword());
+            }
+            
+            config.setDataSourceProperties(properties);
+        }
+        
+        return config;
+    }
+    
+    /**
+     * Cleanup method called when the Spring context is being shut down.
+     * Ensures all connection pools are closed gracefully.
+     */
+    @PreDestroy
+    public void cleanupConnectionPools() {
+        logger.info("Shutting down all database connection pools...");
+        
+        for (Map.Entry<UUID, HikariDataSource> entry : dataSources.entrySet()) {
+            try {
+                UUID connectionId = entry.getKey();
+                HikariDataSource dataSource = entry.getValue();
+                
+                if (dataSource != null && !dataSource.isClosed()) {
+                    dataSource.close();
+                    logger.info("Closed connection pool: ID={}", connectionId);
+                }
+            } catch (Exception e) {
+                logger.error("Error closing connection pool", e);
+            }
+        }
+        
+        dataSources.clear();
+        connectionInfoMap.clear();
+        
+        logger.info("All database connection pools have been shut down");
+    }
+}
