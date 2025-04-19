@@ -1,5 +1,7 @@
 package com.privsense.core.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,6 +24,7 @@ public class TableInfo {
     private String remarks; // Comments/descriptions for the table
     
     @Builder.Default
+    @JsonManagedReference
     private List<ColumnInfo> columns = new ArrayList<>();
     
     @Builder.Default
@@ -30,6 +33,7 @@ public class TableInfo {
     @Builder.Default
     private List<RelationshipInfo> exportedRelationships = new ArrayList<>(); // Foreign keys that reference this table
     
+    @JsonBackReference
     private SchemaInfo schema; // Reference to the parent schema
     
     /**

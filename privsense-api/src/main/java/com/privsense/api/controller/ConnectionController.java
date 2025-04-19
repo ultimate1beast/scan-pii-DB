@@ -3,6 +3,7 @@ package com.privsense.api.controller;
 import com.privsense.api.dto.ConnectionResponse;
 import com.privsense.api.dto.DatabaseConnectionRequest;
 import com.privsense.api.exception.ResourceNotFoundException;
+import com.privsense.api.mapper.DtoMapper;
 import com.privsense.api.repository.ConnectionRepository;
 import com.privsense.core.exception.DatabaseConnectionException;
 import com.privsense.core.model.DatabaseConnectionInfo;
@@ -14,7 +15,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,7 +36,7 @@ public class ConnectionController {
     private final DatabaseConnector databaseConnector;
     private final MetadataExtractor metadataExtractor;
     private final ConnectionRepository connectionRepository;
-    private final ModelMapper modelMapper;
+    private final DtoMapper dtoMapper;
 
     /**
      * Creates a new database connection.
@@ -52,8 +52,8 @@ public class ConnectionController {
     public ResponseEntity<ConnectionResponse> createConnection(
             @Valid @RequestBody DatabaseConnectionRequest request) {
 
-        // Convert DTO to domain model using ModelMapper
-        DatabaseConnectionInfo connectionInfo = modelMapper.map(request, DatabaseConnectionInfo.class);
+        // Convert DTO to domain model using DtoMapper (proper mapstruct mapper)
+        DatabaseConnectionInfo connectionInfo = dtoMapper.toDomainModel(request);
 
         try {
             // Try connecting first to get the actual connection ID used by the connector
@@ -73,8 +73,8 @@ public class ConnectionController {
                 productVersion = connection.getMetaData().getDatabaseProductVersion();
             }
 
-            // Build the response using ModelMapper and then customize
-            ConnectionResponse response = modelMapper.map(connectionInfo, ConnectionResponse.class);
+            // Build the response using DtoMapper and then customize
+            ConnectionResponse response = dtoMapper.toDto(connectionInfo);
             response.setConnectionId(connectionId); // Use the ID from the connector
             response.setDatabaseProductName(productName);
             response.setDatabaseProductVersion(productVersion);
@@ -122,8 +122,8 @@ public class ConnectionController {
         // Set the ID to ensure it's available in the connection info object
         connectionInfo.setId(connectionId);
         
-        // Map domain model to DTO using ModelMapper
-        ConnectionResponse response = modelMapper.map(connectionInfo, ConnectionResponse.class);
+        // Map domain model to DTO using DtoMapper
+        ConnectionResponse response = dtoMapper.toDto(connectionInfo);
         response.setConnectionId(connectionId);
         response.setStatus("AVAILABLE");
                 
@@ -146,8 +146,39 @@ public class ConnectionController {
              throw new ResourceNotFoundException("Connection not found: " + connectionId);
         }
 
-        try (Connection connection = databaseConnector.getConnection(connectionId)) { // Pass UUID
+        try (Connection connection = databaseConnector.getConnection(connectionId)) {
+            // Log database product name and version for debugging
+            String dbType = connection.getMetaData().getDatabaseProductName();
+            String dbVersion = connection.getMetaData().getDatabaseProductVersion();
+            
+            // Get the current catalog and schema information
+            String catalog = connection.getCatalog();
+            String schema = connection.getSchema();
+            
+            // Extract metadata
             SchemaInfo schemaInfo = metadataExtractor.extractMetadata(connection);
+            
+            // Log some information about what was extracted
+            if (schemaInfo != null) {
+                int tableCount = schemaInfo.getTables() != null ? schemaInfo.getTables().size() : 0;
+                int relationshipCount = 0;
+                if (schemaInfo.getTables() != null) {
+                    for (var table : schemaInfo.getTables()) {
+                        int imported = table.getImportedRelationships() != null ? table.getImportedRelationships().size() : 0;
+                        int exported = table.getExportedRelationships() != null ? table.getExportedRelationships().size() : 0;
+                        relationshipCount += imported + exported;
+                    }
+                }
+                
+                // Log structured information to help with debugging
+                System.out.println("Database Type: " + dbType);
+                System.out.println("Database Version: " + dbVersion);
+                System.out.println("Catalog: " + catalog);
+                System.out.println("Schema: " + schema);
+                System.out.println("Tables found: " + tableCount);
+                System.out.println("Relationships found: " + relationshipCount);
+            }
+            
             return ResponseEntity.ok(schemaInfo);
         } catch (SQLException e) {
             throw new DatabaseConnectionException("Failed to connect to database: " + e.getMessage(), e);
@@ -169,7 +200,14 @@ public class ConnectionController {
             throw new ResourceNotFoundException("Connection not found: " + connectionId);
         }
         
-        // Delete the connection from our repository
+        // First disconnect from the database to close the connection pool
+        boolean disconnected = databaseConnector.disconnect(connectionId);
+        
+        if (!disconnected) {
+            throw new DatabaseConnectionException("Failed to disconnect database connection: " + connectionId);
+        }
+        
+        // Then delete the connection from our repository
         connectionRepository.deleteById(connectionId);
         
         return ResponseEntity.noContent().build();

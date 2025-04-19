@@ -1,5 +1,6 @@
 package com.privsense.core.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,11 +18,15 @@ import lombok.NoArgsConstructor;
 public class RelationshipInfo {
     
     // Source (parent) table information
+    @JsonBackReference(value = "source-table-ref")
     private TableInfo sourceTable;
+    @JsonBackReference(value = "source-column-ref")
     private ColumnInfo sourceColumn;
     
     // Target (child) table information
+    @JsonBackReference(value = "target-table-ref")
     private TableInfo targetTable;
+    @JsonBackReference(value = "target-column-ref")
     private ColumnInfo targetColumn;
     
     // Relationship metadata

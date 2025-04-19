@@ -1,4 +1,4 @@
-package com.privsense.metadata.enhancer;
+package com.privsense.metadata.scanner;
 
 import com.privsense.core.model.ColumnInfo;
 import com.privsense.core.model.RelationshipInfo;
@@ -14,19 +14,24 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * MySQL-specific implementation of the DbSpecificMetadataEnhancer.
+ * MySQL-specific implementation of the DbSpecificMetadataScanner.
  * Extracts table and column comments and relationships from MySQL's information_schema.
  */
 @Component
-public class MySqlMetadataEnhancer implements DbSpecificMetadataEnhancer {
+public class MySqlMetadataScanner implements DbSpecificMetadataScanner {
     
-    private static final Logger logger = LoggerFactory.getLogger(MySqlMetadataEnhancer.class);
+    private static final Logger logger = LoggerFactory.getLogger(MySqlMetadataScanner.class);
     
     private static final String MYSQL_TYPE = "MySQL";
     
     @Override
     public boolean supports(String databaseType) {
-        return MYSQL_TYPE.equalsIgnoreCase(databaseType);
+        // Add more detailed logging
+        logger.debug("Checking if scanner supports database type: {}", databaseType);
+        boolean isSupported = MYSQL_TYPE.equalsIgnoreCase(databaseType);
+        logger.debug("Database type {} is{} supported by MySqlMetadataScanner", 
+            databaseType, isSupported ? "" : " not");
+        return isSupported;
     }
     
     @Override
@@ -50,15 +55,47 @@ public class MySqlMetadataEnhancer implements DbSpecificMetadataEnhancer {
             schemaName = tables.get(0).getSchema().getSchemaName();
         }
         
+        // For MySQL, if schema name is null, use the catalog name
+        if (schemaName == null && catalogName != null) {
+            schemaName = catalogName;
+            logger.debug("Using catalog name as schema name: {}", schemaName);
+        }
+        
         // If we don't have schema info from the tables, try to get it from the connection
         if (schemaName == null) {
             try {
                 schemaName = connection.getSchema();
                 // In MySQL, schema name is the same as catalog name
                 catalogName = schemaName;
+                logger.debug("Schema name from connection: {}", schemaName);
             } catch (SQLException e) {
                 // Ignore any exceptions, we'll try to proceed without schema name
                 logger.warn("Could not determine schema name from connection", e);
+            }
+            
+            // If still null, try to get catalog name
+            if (schemaName == null) {
+                try {
+                    catalogName = connection.getCatalog();
+                    schemaName = catalogName; // For MySQL, use catalog as schema
+                    logger.debug("Using connection catalog as schema: {}", schemaName);
+                } catch (SQLException e) {
+                    logger.warn("Could not determine catalog name from connection", e);
+                }
+            }
+        }
+        
+        // Final fallback - check directly in the database for the schema
+        if (schemaName == null) {
+            try (Statement stmt = connection.createStatement();
+                 ResultSet rs = stmt.executeQuery(
+                         "SELECT DATABASE() AS current_schema")) {
+                if (rs.next()) {
+                    schemaName = rs.getString("current_schema");
+                    logger.debug("Retrieved current schema from database: {}", schemaName);
+                }
+            } catch (SQLException e) {
+                logger.warn("Could not determine current schema from database", e);
             }
         }
         
@@ -69,20 +106,65 @@ public class MySqlMetadataEnhancer implements DbSpecificMetadataEnhancer {
     @Override
     public void extractRelationships(Connection connection, SchemaInfo schemaInfo) throws SQLException {
         if (schemaInfo == null || schemaInfo.getTables() == null || schemaInfo.getTables().isEmpty()) {
+            logger.warn("Cannot extract relationships: Schema or tables are null or empty");
             return;
         }
         
         String catalogName = schemaInfo.getCatalogName();
         String schemaName = schemaInfo.getSchemaName();
         
-        // If catalog/schema names are not available from SchemaInfo, try to get them from connection
+        // Log schema information for debugging
+        logger.debug("Extracting relationships for catalog: {}, schema: {}", catalogName, schemaName);
+        
+        // For MySQL, the schema name is the same as the catalog name
+        // If schema name is null, use the catalog name instead
+        if (schemaName == null && catalogName != null) {
+            schemaName = catalogName;
+            logger.debug("Using catalog name as schema name: {}", schemaName);
+        }
+        
+        // If schema name is still null, try to get it from connection
         if (schemaName == null) {
             try {
                 schemaName = connection.getSchema();
                 // In MySQL, schema name is the same as catalog name
                 catalogName = schemaName;
+                logger.debug("Schema name from connection: {}", schemaName);
             } catch (SQLException e) {
                 logger.warn("Could not determine schema name from connection", e);
+            }
+            
+            // If still null, try to use catalog from connection
+            if (schemaName == null) {
+                try {
+                    catalogName = connection.getCatalog();
+                    schemaName = catalogName; // For MySQL, use catalog as schema
+                    logger.debug("Using connection catalog as schema: {}", schemaName);
+                } catch (SQLException e) {
+                    logger.warn("Could not determine catalog name from connection", e);
+                }
+            }
+        }
+        
+        // Final fallback - check directly in the database for the schema
+        if (schemaName == null) {
+            try (Statement stmt = connection.createStatement();
+                 ResultSet rs = stmt.executeQuery(
+                         "SELECT DATABASE() AS current_schema")) {
+                if (rs.next()) {
+                    schemaName = rs.getString("current_schema");
+                    logger.debug("Retrieved current schema from database: {}", schemaName);
+                }
+            } catch (SQLException e) {
+                logger.warn("Could not determine current schema from database", e);
+            }
+        }
+        
+        // Log information about the tables in the schema
+        if (logger.isDebugEnabled()) {
+            logger.debug("Schema contains {} tables:", schemaInfo.getTables().size());
+            for (TableInfo table : schemaInfo.getTables()) {
+                logger.debug(" - Table: {}", table.getTableName());
             }
         }
         
@@ -193,6 +275,9 @@ public class MySqlMetadataEnhancer implements DbSpecificMetadataEnhancer {
             columnMap.put(tableNameLower, tableColumns);
         }
         
+        // Debug log table mappings
+        logger.debug("Table map contains {} entries", tableMap.size());
+        
         // MySQL stores foreign key relationships in information_schema.KEY_COLUMN_USAGE and REFERENTIAL_CONSTRAINTS
         String sql = 
                 "SELECT " +
@@ -210,11 +295,19 @@ public class MySqlMetadataEnhancer implements DbSpecificMetadataEnhancer {
                 "WHERE kcu.CONSTRAINT_SCHEMA = ? " +
                 "  AND kcu.REFERENCED_TABLE_NAME IS NOT NULL";
         
+        // Log the SQL query and parameters for debugging
+        logger.debug("Executing foreign key query with schema: {}", schema);
+        
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, schema);
             
+            logger.debug("Executing SQL: {}", sql.replace("?", "'" + schema + "'"));
+            
             try (ResultSet rs = stmt.executeQuery()) {
+                int relationshipCount = 0;
+                
                 while (rs.next()) {
+                    relationshipCount++;
                     String sourceTableName = rs.getString("source_table");
                     String sourceColumnName = rs.getString("source_column");
                     String targetTableName = rs.getString("target_table");
@@ -222,6 +315,11 @@ public class MySqlMetadataEnhancer implements DbSpecificMetadataEnhancer {
                     String constraintName = rs.getString("CONSTRAINT_NAME");
                     String updateRule = rs.getString("UPDATE_RULE");
                     String deleteRule = rs.getString("DELETE_RULE");
+                    
+                    // Log each foreign key relationship found
+                    logger.debug("Found relationship: {}.{} -> {}.{} ({})", 
+                            sourceTableName, sourceColumnName, 
+                            targetTableName, targetColumnName, constraintName);
                     
                     // Get the tables and columns from our maps
                     TableInfo sourceTable = tableMap.get(sourceTableName.toLowerCase());
@@ -250,6 +348,7 @@ public class MySqlMetadataEnhancer implements DbSpecificMetadataEnhancer {
                             .sourceColumn(targetColumn)
                             .targetTable(sourceTable)  // The FK table is the target
                             .targetColumn(sourceColumn)
+                            .relationshipName(constraintName) // Set relationshipName to be the same as constraintName
                             .constraintName(constraintName)
                             .updateRule(updateRule)
                             .deleteRule(deleteRule)
@@ -258,6 +357,30 @@ public class MySqlMetadataEnhancer implements DbSpecificMetadataEnhancer {
                     // Add the relationship to both tables
                     sourceTable.addImportedRelationship(relationship); // FK side imports the relationship
                     targetTable.addExportedRelationship(relationship); // PK side exports the relationship
+                    
+                    logger.debug("Added relationship {} to tables {} and {}", 
+                            constraintName, sourceTable.getTableName(), targetTable.getTableName());
+                }
+                
+                logger.debug("Found {} relationships in total", relationshipCount);
+                
+                // If no relationships were found but we know they exist, this is suspicious
+                if (relationshipCount == 0) {
+                    logger.warn("No relationships found in database despite foreign keys being present in the schema");
+                    
+                    // Manually check if the schema/catalog name is correct
+                    try (Statement checkStmt = connection.createStatement();
+                         ResultSet checkRs = checkStmt.executeQuery(
+                                 "SELECT TABLE_SCHEMA FROM information_schema.TABLES " +
+                                 "WHERE TABLE_NAME = 'customers' LIMIT 1")) {
+                        if (checkRs.next()) {
+                            String actualSchema = checkRs.getString(1);
+                            logger.warn("Schema '{}' was used for query, but customers table is in schema '{}'", 
+                                    schema, actualSchema);
+                        }
+                    } catch (SQLException e) {
+                        logger.error("Error checking actual schema name", e);
+                    }
                 }
             }
         }

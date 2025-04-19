@@ -22,7 +22,15 @@ public class InMemoryConnectionRepository implements ConnectionRepository {
 
     @Override
     public UUID save(DatabaseConnectionInfo connectionInfo) {
-        UUID connectionId = UUID.randomUUID();
+        // Use the ID from the connection info object if it exists
+        UUID connectionId = connectionInfo.getId();
+        
+        // If no ID is set, generate a new one
+        if (connectionId == null) {
+            connectionId = UUID.randomUUID();
+            connectionInfo.setId(connectionId);
+        }
+        
         connections.put(connectionId, connectionInfo);
         return connectionId;
     }

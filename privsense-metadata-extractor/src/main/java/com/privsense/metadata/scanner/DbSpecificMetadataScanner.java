@@ -1,4 +1,4 @@
-package com.privsense.metadata.enhancer;
+package com.privsense.metadata.scanner;
 
 import com.privsense.core.model.SchemaInfo;
 import com.privsense.core.model.TableInfo;
@@ -8,18 +8,18 @@ import java.sql.SQLException;
 import java.util.List;
 
 /**
- * Interface for database-specific metadata enhancement strategies.
+ * Interface for database-specific metadata scanning strategies.
  * Different database systems store schema metadata (especially comments and relationships)
  * in different system tables/views. This interface allows implementing database-specific
- * logic to extract and enhance metadata beyond what's available via standard JDBC.
+ * logic to extract and scan metadata beyond what's available via standard JDBC.
  */
-public interface DbSpecificMetadataEnhancer {
+public interface DbSpecificMetadataScanner {
 
     /**
-     * Checks if this enhancer supports the given database type
+     * Checks if this scanner supports the given database type
      * 
      * @param databaseType The database type identifier (e.g., "MySQL", "PostgreSQL")
-     * @return true if this enhancer can handle the given database type
+     * @return true if this scanner can handle the given database type
      */
     boolean supports(String databaseType);
     

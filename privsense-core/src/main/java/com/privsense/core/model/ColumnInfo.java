@@ -1,5 +1,6 @@
 package com.privsense.core.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -28,6 +29,7 @@ public class ColumnInfo {
     private boolean nullable;
     private boolean primaryKey;
     
+    @JsonBackReference
     private TableInfo table; // Reference to the parent table
     
     /**

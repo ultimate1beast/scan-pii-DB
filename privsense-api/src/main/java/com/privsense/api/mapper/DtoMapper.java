@@ -14,7 +14,6 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 
-import java.util.UUID;
 
 /**
  * Interface for mapping between DTOs and domain models using MapStruct.

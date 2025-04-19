@@ -1,5 +1,6 @@
 package com.privsense.core.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,6 +22,7 @@ public class SchemaInfo {
     private String catalogName;
     
     @Builder.Default
+    @JsonManagedReference
     private List<TableInfo> tables = new ArrayList<>();
     
     /**

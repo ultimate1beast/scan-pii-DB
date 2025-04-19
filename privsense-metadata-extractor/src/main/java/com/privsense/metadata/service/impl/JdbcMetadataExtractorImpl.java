@@ -5,32 +5,31 @@ import com.privsense.core.model.ColumnInfo;
 import com.privsense.core.model.SchemaInfo;
 import com.privsense.core.model.TableInfo;
 import com.privsense.core.service.MetadataExtractor;
-import com.privsense.metadata.enhancer.DbSpecificMetadataEnhancer;
+import com.privsense.metadata.scanner.DbSpecificMetadataScanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
  * Implementation of the MetadataExtractor interface that uses JDBC DatabaseMetaData
- * and database-specific enhancers to extract schema information.
+ * and database-specific scanners to extract schema information.
  */
 @Service
 public class JdbcMetadataExtractorImpl implements MetadataExtractor {
 
     private static final Logger logger = LoggerFactory.getLogger(JdbcMetadataExtractorImpl.class);
     
-    private final List<DbSpecificMetadataEnhancer> enhancers;
+    private final List<DbSpecificMetadataScanner> scanners;
     
     @Autowired
-    public JdbcMetadataExtractorImpl(List<DbSpecificMetadataEnhancer> enhancers) {
-        this.enhancers = enhancers;
+    public JdbcMetadataExtractorImpl(List<DbSpecificMetadataScanner> scanners) {
+        this.scanners = scanners;
     }
     
     @Override
@@ -78,10 +77,10 @@ public class JdbcMetadataExtractorImpl implements MetadataExtractor {
             }
             
             // Enhance with database-specific metadata only for the requested tables
-            DbSpecificMetadataEnhancer enhancer = getEnhancerForDatabase(connection);
-            if (enhancer != null) {
-                enhancer.enhanceTables(connection, schema.getTables());
-                enhancer.extractRelationships(connection, schema);
+            DbSpecificMetadataScanner scanner = getScannerForDatabase(connection);
+            if (scanner != null) {
+                scanner.enhanceTables(connection, schema.getTables());
+                scanner.extractRelationships(connection, schema);
             }
             
             return schema;
@@ -245,26 +244,26 @@ public class JdbcMetadataExtractorImpl implements MetadataExtractor {
      * Enhances the schema information with database-specific metadata
      */
     private void enhanceSchemaInfo(Connection connection, SchemaInfo schema) throws SQLException {
-        DbSpecificMetadataEnhancer enhancer = getEnhancerForDatabase(connection);
+        DbSpecificMetadataScanner scanner = getScannerForDatabase(connection);
         
-        if (enhancer != null) {
-            enhancer.enhanceSchemaInfo(connection, schema);
-            enhancer.extractRelationships(connection, schema);
+        if (scanner != null) {
+            scanner.enhanceSchemaInfo(connection, schema);
+            scanner.extractRelationships(connection, schema);
         } else {
-            logger.warn("No specific enhancer found for database type: {}", detectDatabaseType(connection));
+            logger.warn("No specific scanner found for database type: {}", detectDatabaseType(connection));
         }
     }
     
     /**
-     * Gets the appropriate metadata enhancer for the database type
+     * Gets the appropriate metadata scanner for the database type
      */
-    private DbSpecificMetadataEnhancer getEnhancerForDatabase(Connection connection) {
+    private DbSpecificMetadataScanner getScannerForDatabase(Connection connection) {
         String databaseType = detectDatabaseType(connection);
         
-        for (DbSpecificMetadataEnhancer enhancer : enhancers) {
-            if (enhancer.supports(databaseType)) {
-                logger.debug("Found enhancer for database type: {}", databaseType);
-                return enhancer;
+        for (DbSpecificMetadataScanner scanner : scanners) {
+            if (scanner.supports(databaseType)) {
+                logger.debug("Found scanner for database type: {}", databaseType);
+                return scanner;
             }
         }
         

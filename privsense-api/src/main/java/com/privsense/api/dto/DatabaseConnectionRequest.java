@@ -26,9 +26,10 @@ public class DatabaseConnectionRequest {
     @NotBlank(message = "Username is required")
     private String username;
 
-    @NotBlank(message = "Password is required")
+   // @NotBlank(message = "Password is required")
     private String password;
     
+    @NotBlank(message = "Driver class name is required")
     private String driverClassName;
     
     private Boolean sslEnabled;

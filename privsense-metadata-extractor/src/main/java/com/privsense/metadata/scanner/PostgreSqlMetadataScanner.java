@@ -1,4 +1,4 @@
-package com.privsense.metadata.enhancer;
+package com.privsense.metadata.scanner;
 
 import com.privsense.core.model.ColumnInfo;
 import com.privsense.core.model.RelationshipInfo;
@@ -17,13 +17,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * PostgreSQL-specific implementation of the DbSpecificMetadataEnhancer.
+ * PostgreSQL-specific implementation of the DbSpecificMetadataScanner.
  * Extracts table and column comments and relationships from PostgreSQL's system catalogs.
  */
 @Component
-public class PostgreSqlMetadataEnhancer implements DbSpecificMetadataEnhancer {
+public class PostgreSqlMetadataScanner implements DbSpecificMetadataScanner {
     
-    private static final Logger logger = LoggerFactory.getLogger(PostgreSqlMetadataEnhancer.class);
+    private static final Logger logger = LoggerFactory.getLogger(PostgreSqlMetadataScanner.class);
     
     private static final String POSTGRESQL_TYPE = "PostgreSQL";
     
@@ -261,6 +261,7 @@ public class PostgreSqlMetadataEnhancer implements DbSpecificMetadataEnhancer {
                             .sourceColumn(pkColumn)
                             .targetTable(fkTable)  // Foreign key table is the target
                             .targetColumn(fkColumn)
+                            .relationshipName(constraintName) // Set relationshipName to be the same as constraintName
                             .constraintName(constraintName)
                             .updateRule(updateRule)
                             .deleteRule(deleteRule)

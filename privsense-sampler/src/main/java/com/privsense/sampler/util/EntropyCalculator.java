@@ -3,7 +3,7 @@ package com.privsense.sampler.util;
 import com.privsense.core.model.SampleData;
 import org.springframework.stereotype.Component;
 
-import java.util.Map;
+
 
 /**
  * Utility class for calculating Shannon entropy of sampled data.
