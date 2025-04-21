@@ -1,24 +1,34 @@
 package com.privsense.api.mapper;
 
+import com.privsense.api.dto.BatchSamplingRequest;
+import com.privsense.api.dto.BatchSamplingResponse;
 import com.privsense.api.dto.ConnectionResponse;
 import com.privsense.api.dto.DatabaseConnectionRequest;
+import com.privsense.api.dto.SamplingRequest;
+import com.privsense.api.dto.SamplingResponse;
 import com.privsense.api.dto.ScanJobResponse;
 import com.privsense.api.dto.ScanRequest;
 import com.privsense.api.service.ScanOrchestrationService;
 import com.privsense.api.service.ScanOrchestrationService.JobStatus;
+import com.privsense.core.model.ColumnInfo;
 import com.privsense.core.model.DatabaseConnectionInfo;
 import com.privsense.core.model.DetectionConfig;
+import com.privsense.core.model.SampleData;
 import com.privsense.core.model.SamplingConfig;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import org.mapstruct.ReportingPolicy;
 import org.mapstruct.factory.Mappers;
-
 
 /**
  * Interface for mapping between DTOs and domain models using MapStruct.
  */
-@Mapper(componentModel = "spring")
+@Mapper(
+    componentModel = "spring",
+    unmappedTargetPolicy = ReportingPolicy.IGNORE,
+    imports = {com.privsense.api.dto.DatabaseConnectionRequest.class}
+)
 public interface DtoMapper {
 
     DtoMapper INSTANCE = Mappers.getMapper(DtoMapper.class);
@@ -87,4 +97,70 @@ public interface DtoMapper {
             default: return "Unknown";
         }
     }
+    
+    /**
+     * Maps SamplingRequest DTO to SamplingConfig domain model.
+     */
+    @Mapping(source = "sampleSize", target = "sampleSize")
+    @Mapping(source = "samplingMethod", target = "samplingMethod")
+    @Mapping(source = "calculateEntropy", target = "entropyCalculationEnabled")
+    @Mapping(target = "maxConcurrentQueries", ignore = true)
+    SamplingConfig toSamplingConfig(SamplingRequest request);
+    
+    /**
+     * Maps SampleData and SamplingConfig to SamplingResponse DTO.
+     * Note: This mapping is partial and requires manual post-processing
+     * for complex fields like valueDistribution.
+     */
+    @Mapping(target = "tableName", ignore = true)  // Set manually
+    @Mapping(target = "columnName", ignore = true) // Set manually
+    @Mapping(source = "sampleData.totalRowCount", target = "actualRowCount")
+    @Mapping(source = "sampleData.totalNullCount", target = "nullCount")
+    @Mapping(source = "sampleData.nullPercentage", target = "nullPercentage")
+    @Mapping(source = "sampleData.nonNullPercentage", target = "nonNullPercentage")
+    @Mapping(source = "sampleData.entropy", target = "entropy")
+    @Mapping(target = "entropyCalculated", expression = "java(sampleData.getEntropy() != null)")
+    @Mapping(source = "sampleData.samples", target = "sampleValues")
+    @Mapping(target = "samplingMethod", source = "config.samplingMethod")
+    @Mapping(target = "sampleSize", source = "config.sampleSize")
+    @Mapping(target = "samplingTimeMs", ignore = true) // Set manually
+    @Mapping(target = "valueDistribution", ignore = true) // Set manually
+    SamplingResponse toSamplingResponse(SampleData sampleData, SamplingConfig config);
+    
+    /**
+     * Maps BatchSamplingRequest to SamplingConfig domain model.
+     * This is used for creating a default configuration for the batch operation.
+     */
+    @Mapping(source = "defaultSampleSize", target = "sampleSize")
+    @Mapping(source = "defaultSamplingMethod", target = "samplingMethod")
+    @Mapping(source = "calculateEntropy", target = "entropyCalculationEnabled")
+    @Mapping(target = "maxConcurrentQueries", ignore = true)
+    SamplingConfig toSamplingConfig(BatchSamplingRequest request);
+    
+    /**
+     * Maps SampleData to a ColumnSamplingResult for the batch response.
+     */
+    @Mapping(target = "columnName", source = "columnInfo.columnName")
+    @Mapping(source = "sampleData.totalRowCount", target = "actualRowCount")
+    @Mapping(source = "sampleData.totalNullCount", target = "nullCount")
+    @Mapping(source = "sampleData.nullPercentage", target = "nullPercentage")
+    @Mapping(source = "sampleData.nonNullPercentage", target = "nonNullPercentage")
+    @Mapping(source = "sampleData.entropy", target = "entropy")
+    @Mapping(target = "entropyCalculated", expression = "java(sampleData.getEntropy() != null)")
+    @Mapping(target = "samplingMethod", source = "config.samplingMethod")
+    @Mapping(target = "sampleSize", source = "config.sampleSize")
+    @Mapping(target = "topValues", ignore = true) // Set manually
+    @Mapping(target = "status", constant = "SUCCESS")
+    @Mapping(target = "errorMessage", ignore = true)
+    BatchSamplingResponse.ColumnSamplingResult toColumnSamplingResult(
+            SampleData sampleData, ColumnInfo columnInfo, SamplingConfig config);
+            
+    /**
+     * Creates a TableSamplingRequest object from a BatchSamplingRequest.TableSamplingRequest
+     */
+    @Mapping(source = "tableName", target = "tableName")
+    @Mapping(source = "columnNames", target = "columnNames")
+    @Mapping(source = "sampleSize", target = "sampleSize")
+    BatchSamplingRequest.TableSamplingRequest toTableSamplingRequest(
+            BatchSamplingRequest.TableSamplingRequest source);
 }

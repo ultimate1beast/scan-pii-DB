@@ -62,11 +62,33 @@ public class JsonComplianceReporterImpl implements ComplianceReporter {
         // These would typically come from the actual configuration used,
         // but for simplicity we'll use placeholder values
         if (formatOptions.containsKey("samplingConfig")) {
-            samplingConfig = (Map<String, Object>) formatOptions.get("samplingConfig");
+            // Check if it's already a Map
+            Object config = formatOptions.get("samplingConfig");
+            if (config instanceof Map) {
+                samplingConfig = (Map<String, Object>) config;
+            } else {
+                // Convert object to map using ObjectMapper
+                try {
+                    samplingConfig = objectMapper.convertValue(config, Map.class);
+                } catch (Exception e) {
+                    logger.warn("Failed to convert samplingConfig to map, using empty map", e);
+                }
+            }
         }
         
         if (formatOptions.containsKey("detectionConfig")) {
-            detectionConfig = (Map<String, Object>) formatOptions.get("detectionConfig");
+            // Check if it's already a Map
+            Object config = formatOptions.get("detectionConfig");
+            if (config instanceof Map) {
+                detectionConfig = (Map<String, Object>) config;
+            } else {
+                // Convert object to map using ObjectMapper
+                try {
+                    detectionConfig = objectMapper.convertValue(config, Map.class);
+                } catch (Exception e) {
+                    logger.warn("Failed to convert detectionConfig to map, using empty map", e);
+                }
+            }
         }
         
         // Build the report

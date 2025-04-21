@@ -1,12 +1,18 @@
 package com.privsense.core.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.sql.Types;
+import java.util.UUID;
 
 /**
  * Critical object holding column metadata information retrieved from the database.
@@ -15,21 +21,50 @@ import java.sql.Types;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@Entity
+@Table(name = "columns")
+@JsonIdentityInfo(
+    generator = ObjectIdGenerators.PropertyGenerator.class, 
+    property = "columnName"
+)
 public class ColumnInfo {
     
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+    
+    @Column(name = "column_name", nullable = false)
     private String columnName;
+    
+    @Column(name = "jdbc_type")
     private int jdbcType; // From java.sql.Types
+    
+    @Column(name = "database_type_name")
     private String databaseTypeName; // Database-specific type name
+    
+    @Column(name = "comments", columnDefinition = "TEXT")
     private String comments; // Comments/descriptions fetched from the database
     
+    @Column(name = "size")
     private Integer size; // Column size/length
+    
+    @Column(name = "precision")
     private Integer precision; // Decimal precision
+    
+    @Column(name = "scale")
     private Integer scale; // Decimal scale
     
+    @Column(name = "nullable")
     private boolean nullable;
+    
+    @Column(name = "primary_key")
     private boolean primaryKey;
     
     @JsonBackReference
+    @ToString.Exclude // Prevent recursion in toString
+    @EqualsAndHashCode.Exclude // Prevent recursion
+    @ManyToOne
+    @JoinColumn(name = "table_id")
     private TableInfo table; // Reference to the parent table
     
     /**

@@ -18,6 +18,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
+import jakarta.annotation.PostConstruct;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -50,6 +51,11 @@ public class NerClientStrategy implements PiiDetectionStrategy {
     @Value("${privsense.ner.service.retry-attempts:2}")
     private int retryAttempts;
     
+    @Value("${privsense.ner.service.enabled:true}")
+    private boolean nerServiceEnabled;
+    
+    private boolean serviceAvailable = true;
+    
     /**
      * Constructor with dependency injection
      */
@@ -57,13 +63,44 @@ public class NerClientStrategy implements PiiDetectionStrategy {
     public NerClientStrategy(WebClient.Builder webClientBuilder, ObjectMapper objectMapper) {
         this.webClient = webClientBuilder.build();
         this.objectMapper = objectMapper;
-        logger.info("Initialized NerClientStrategy with service URL: {}", nerServiceUrl);
+    }
+    
+    @PostConstruct
+    public void init() {
+        logger.info("Initialized NerClientStrategy with service URL: {}, enabled: {}", nerServiceUrl, nerServiceEnabled);
+        
+        // Test connection to NER service on startup
+        if (nerServiceEnabled) {
+            try {
+                webClient.get()
+                    .uri(nerServiceUrl + "/health")
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .timeout(Duration.ofMillis(requestTimeoutMs))
+                    .block();
+                logger.info("Successfully connected to NER service at {}", nerServiceUrl);
+            } catch (Exception e) {
+                serviceAvailable = false;
+                logger.warn("Failed to connect to NER service at {}: {}. Will continue without NER detection.", 
+                    nerServiceUrl, e.getMessage());
+            }
+        } else {
+            serviceAvailable = false;
+            logger.info("NER service is disabled by configuration");
+        }
     }
 
     @Override
     public List<PiiCandidate> detect(ColumnInfo columnInfo, SampleData sampleData) {
         if (columnInfo == null || sampleData == null || sampleData.getSamples() == null) {
             logger.warn("Column info or sample data is null, skipping NER detection");
+            return Collections.emptyList();
+        }
+        
+        // Skip NER detection if service is disabled or unavailable
+        if (!nerServiceEnabled || !serviceAvailable) {
+            logger.debug("Skipping NER detection for column {} - service disabled or unavailable", 
+                columnInfo.getColumnName());
             return Collections.emptyList();
         }
         
@@ -100,6 +137,7 @@ public class NerClientStrategy implements PiiDetectionStrategy {
             return processNerResponse(response, columnInfo, stringSamples.size());
             
         } catch (Exception e) {
+            serviceAvailable = false; // Mark service as unavailable after failure
             logger.error("Error calling NER service for column {}: {}", 
                     columnInfo.getColumnName(), e.getMessage());
             return Collections.emptyList();

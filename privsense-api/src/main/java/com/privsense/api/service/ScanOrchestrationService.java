@@ -2,9 +2,10 @@ package com.privsense.api.service;
 
 import com.privsense.api.dto.ScanJobResponse;
 import com.privsense.api.dto.ScanRequest;
+import com.privsense.api.dto.ComplianceReportDTO;
 import com.privsense.api.config.SamplingConfigProperties;
 import com.privsense.api.config.DetectionConfigProperties;
-import com.privsense.api.repository.ConnectionRepository;
+import com.privsense.core.repository.ConnectionRepository;
 import com.privsense.core.exception.DatabaseConnectionException;
 import com.privsense.core.exception.MetadataExtractionException;
 import com.privsense.core.exception.PiiDetectionException;
@@ -15,21 +16,26 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.hibernate.Hibernate;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
 
+
 /**
  * Service responsible for orchestrating the scan process.
- * Manages the asynchronous execution of database scans.
+ * Manages the asynchronous execution of database scans using persistent storage.
  */
 @Slf4j
 @Service
@@ -111,9 +117,6 @@ public class ScanOrchestrationService {
         }
     }
 
-    // Map of job ID to job status
-    private final ConcurrentHashMap<UUID, JobStatus> jobs = new ConcurrentHashMap<>();
-
     // Dependency injection of required services
     private final DatabaseConnector databaseConnector;
     private final MetadataExtractor metadataExtractor;
@@ -124,29 +127,7 @@ public class ScanOrchestrationService {
     private final SamplingConfigProperties samplingConfigProps;
     private final DetectionConfigProperties detectionConfigProps;
     private final ModelMapper modelMapper;
-
-    private final Map<UUID, JobStatus> jobStatusMap = new ConcurrentHashMap<>();
-    private final Map<UUID, ComplianceReport> jobResultMap = new ConcurrentHashMap<>();
-
-    /**
-     * Start a new scan job.
-     *
-     * @param connectionId The ID of the database connection to scan
-     * @param targetTables Optional list of specific tables to scan
-     * @param samplingConfig Configuration for data sampling
-     * @param detectionConfig Configuration for PII detection
-     * @return The ID of the newly created job
-     */
-    public UUID startScanJob(UUID connectionId, List<String> targetTables,
-                             SamplingConfig samplingConfig, DetectionConfig detectionConfig) {
-        UUID jobId = UUID.randomUUID();
-        JobStatus status = new JobStatus(jobId, connectionId);
-        jobs.put(jobId, status);
-
-        // In a real implementation, we would start an async task here
-
-        return jobId;
-    }
+    private final ScanPersistenceService scanPersistenceService;
 
     /**
      * Submits a new scan job and returns a unique job identifier.
@@ -160,10 +141,19 @@ public class ScanOrchestrationService {
             throw new IllegalArgumentException("Connection ID not found: " + scanRequest.getConnectionId());
         }
 
-        UUID jobId = UUID.randomUUID();
-        JobStatus jobStatus = new JobStatus(jobId, scanRequest.getConnectionId());
-        jobStatusMap.put(jobId, jobStatus);
-
+        // Create initial scan record in the database
+        DatabaseConnectionInfo connectionInfo = connectionRepository.findById(scanRequest.getConnectionId())
+            .orElseThrow(() -> new IllegalArgumentException("Connection not found: " + scanRequest.getConnectionId()));
+            
+        ScanMetadata scanMetadata = scanPersistenceService.createScan(
+            scanRequest.getConnectionId(), 
+            connectionInfo.getDatabaseName(),
+            "Pending", // Will be updated when we get the actual connection
+            "Pending"  // Will be updated when we get the actual connection
+        );
+        
+        UUID jobId = scanMetadata.getId();
+        
         // Start the asynchronous scan process
         processScanAsync(jobId, scanRequest);
 
@@ -179,12 +169,14 @@ public class ScanOrchestrationService {
      */
     @Async("taskExecutor")
     protected CompletableFuture<Void> processScanAsync(UUID jobId, ScanRequest request) {
-        JobStatus status = jobStatusMap.get(jobId);
-
         try {
             // 1. Get connection ID
             UUID connectionId = request.getConnectionId();
-            status.setState(JobState.EXTRACTING_METADATA);
+            
+            // Update scan status to EXTRACTING_METADATA
+            scanPersistenceService.updateScanStatus(jobId, 
+                ScanMetadata.ScanStatus.EXTRACTING_METADATA);
+                
             log.info("Job {}: Extracting metadata from database", jobId);
 
             // Verify connection exists before trying to get a connection object
@@ -192,15 +184,29 @@ public class ScanOrchestrationService {
                 throw new IllegalArgumentException("Connection ID not found: " + connectionId);
             }
 
-            try (Connection connection = databaseConnector.getConnection(connectionId)) { // Pass UUID
+            try (Connection connection = databaseConnector.getConnection(connectionId)) { 
+                // Update database info in the scan record
+                String dbName = connection.getCatalog();
+                String dbProductName = connection.getMetaData().getDatabaseProductName();
+                String dbProductVersion = connection.getMetaData().getDatabaseProductVersion();
+                
+                // Update the scan record with actual database info
+                ScanMetadata scanMetadata = scanPersistenceService.getScanById(jobId)
+                    .orElseThrow(() -> new IllegalArgumentException("Scan record not found: " + jobId));
+                    
+                // TODO: Add method to update database info in ScanPersistenceService
+                
                 // 2. Extract metadata
                 SchemaInfo schemaInfo = metadataExtractor.extractMetadata(connection);
                 List<TableInfo> targetTables = filterTargetTables(schemaInfo, request.getTargetTables());
 
-                // 3. Sample data
-                status.setState(JobState.SAMPLING);
+                // Update scan status to SAMPLING
+                scanPersistenceService.updateScanStatus(jobId, 
+                    ScanMetadata.ScanStatus.SAMPLING);
+                    
                 log.info("Job {}: Sampling data from columns", jobId);
 
+                // 3. Sample data
                 List<ColumnInfo> columnsToSample = getAllColumns(targetTables);
                 SamplingConfig samplingConfig = buildSamplingConfig(request);
 
@@ -210,24 +216,32 @@ public class ScanOrchestrationService {
                         samplingConfig
                 );
 
-                // 4. Detect PII
-                status.setState(JobState.DETECTING_PII);
+                // Update scan status to DETECTING_PII
+                scanPersistenceService.updateScanStatus(jobId, 
+                    ScanMetadata.ScanStatus.DETECTING_PII);
+                    
                 log.info("Job {}: Detecting PII in sampled data", jobId);
 
+                // 4. Detect PII
                 DetectionConfig detectionConfig = buildDetectionConfig(request);
-                // Pass the map directly instead of converting to a list
                 List<DetectionResult> detectionResults = piiDetector.detectPii(sampledData);
+                
+                // Save detection results to database
+                scanPersistenceService.saveScanResults(jobId, detectionResults);
 
-                // 5. Generate report
-                status.setState(JobState.GENERATING_REPORT);
+                // Update scan status to GENERATING_REPORT
+                scanPersistenceService.updateScanStatus(jobId, 
+                    ScanMetadata.ScanStatus.GENERATING_REPORT);
+                    
                 log.info("Job {}: Generating compliance report", jobId);
 
+                // 5. Generate report
                 // Need DatabaseConnectionInfo for the report context
                 DatabaseConnectionInfo connectionInfoForReport = connectionRepository.findById(connectionId)
                         .orElseThrow(() -> new IllegalArgumentException("Connection ID not found for report context: " + connectionId));
 
                 ScanContext scanContext = ScanContext.builder()
-                        .databaseConnectionInfo(connectionInfoForReport) // Use fetched connectionInfo
+                        .databaseConnectionInfo(connectionInfoForReport)
                         .schemaInfo(schemaInfo)
                         .sampledData(sampledData)
                         .detectionResults(detectionResults)
@@ -238,33 +252,27 @@ public class ScanOrchestrationService {
 
                 ComplianceReport report = reportGenerator.generateReport(scanContext);
 
-                status.setState(JobState.COMPLETED);
+                // Update scan status to COMPLETED
+                scanPersistenceService.completeScan(jobId);
+                
                 log.info("Job {}: Scan completed successfully", jobId);
-
-                // Store the result
-                jobResultMap.put(jobId, report);
             }
 
         } catch (DatabaseConnectionException e) {
             log.error("Job {}: Database connection failed", jobId, e);
-            status.setState(JobState.FAILED);
-            status.setErrorMessage("Database connection error: " + e.getMessage());
+            scanPersistenceService.failScan(jobId, "Database connection error: " + e.getMessage());
         } catch (MetadataExtractionException e) {
             log.error("Job {}: Metadata extraction failed", jobId, e);
-            status.setState(JobState.FAILED);
-            status.setErrorMessage("Metadata extraction error: " + e.getMessage());
+            scanPersistenceService.failScan(jobId, "Metadata extraction error: " + e.getMessage());
         } catch (PiiDetectionException e) {
             log.error("Job {}: PII detection failed", jobId, e);
-            status.setState(JobState.FAILED);
-            status.setErrorMessage("PII detection error: " + e.getMessage());
+            scanPersistenceService.failScan(jobId, "PII detection error: " + e.getMessage());
         } catch (SQLException e) {
             log.error("Job {}: SQL error during scan", jobId, e);
-            status.setState(JobState.FAILED);
-            status.setErrorMessage("SQL error: " + e.getMessage());
+            scanPersistenceService.failScan(jobId, "SQL error: " + e.getMessage());
         } catch (Exception e) {
             log.error("Job {}: Scan failed with unexpected error", jobId, e);
-            status.setState(JobState.FAILED);
-            status.setErrorMessage("Unexpected error: " + e.getMessage());
+            scanPersistenceService.failScan(jobId, "Unexpected error: " + e.getMessage());
         }
 
         return CompletableFuture.completedFuture(null);
@@ -278,11 +286,43 @@ public class ScanOrchestrationService {
      * @throws IllegalArgumentException if the job ID is not found
      */
     public ScanJobResponse getJobStatus(UUID jobId) {
-        JobStatus status = jobStatusMap.get(jobId);
-        if (status == null) {
+        // Get from the database
+        Optional<ScanMetadata> scanOpt = scanPersistenceService.getScanById(jobId);
+        if (!scanOpt.isPresent()) {
             throw new IllegalArgumentException("Job ID not found: " + jobId);
         }
-
+        
+        ScanMetadata scan = scanOpt.get();
+        JobStatus status = new JobStatus(scan.getId(), scan.getConnectionId());
+        
+        // Convert database status to in-memory status
+        switch (scan.getStatus()) {
+            case PENDING:
+                status.setState(JobState.PENDING);
+                break;
+            case EXTRACTING_METADATA:
+                status.setState(JobState.EXTRACTING_METADATA);
+                break;
+            case SAMPLING:
+                status.setState(JobState.SAMPLING);
+                break;
+            case DETECTING_PII:
+                status.setState(JobState.DETECTING_PII);
+                break;
+            case GENERATING_REPORT:
+                status.setState(JobState.GENERATING_REPORT);
+                break;
+            case COMPLETED:
+                status.setState(JobState.COMPLETED);
+                break;
+            case FAILED:
+                status.setState(JobState.FAILED);
+                status.setErrorMessage(scan.getErrorMessage());
+                break;
+            default:
+                status.setState(JobState.PENDING);
+        }
+        
         // Use ModelMapper to convert JobStatus to ScanJobResponse
         return modelMapper.map(status, ScanJobResponse.class);
     }
@@ -296,21 +336,109 @@ public class ScanOrchestrationService {
      * @throws IllegalStateException if the scan is not complete
      */
     public ComplianceReport getScanReport(UUID jobId) {
-        JobStatus status = jobStatusMap.get(jobId);
-        if (status == null) {
+        // Get job status to check if job is completed
+        try {
+            ScanJobResponse jobResponse = getJobStatus(jobId);
+            if (!jobResponse.isCompleted()) {
+                throw new IllegalStateException("Scan job is not completed. Current state: " + jobResponse.getStatus());
+            }
+        } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Job ID not found: " + jobId);
         }
-
-        if (status.getState() != JobState.COMPLETED) {
-            throw new IllegalStateException("Scan job is not completed. Current state: " + status.getState());
+        
+        // Get scan data from the database
+        Optional<ScanMetadata> scanOpt = scanPersistenceService.getScanById(jobId);
+        if (!scanOpt.isPresent()) {
+            throw new IllegalArgumentException("Scan data not found in database: " + jobId);
         }
+        
+        ScanMetadata scan = scanOpt.get();
+        
+        // Get detection results from database
+        List<DetectionResult> detectionResults = scanPersistenceService.getPiiResultsByScanId(jobId);
 
-        ComplianceReport report = jobResultMap.get(jobId);
-        if (report == null) {
-            throw new IllegalStateException("Report not found for completed job: " + jobId);
+        // Build a report from the database results
+        // We need the database connection info for the report
+        DatabaseConnectionInfo connectionInfo = connectionRepository.findById(scan.getConnectionId())
+            .orElseThrow(() -> new IllegalArgumentException("Connection ID not found: " + scan.getConnectionId()));
+            
+        // Create a report with the database results
+        return ComplianceReport.builder()
+            .scanId(scan.getId())
+            .reportId(UUID.randomUUID().toString())
+            .connectionInfo(connectionInfo)
+            .piiFindings(detectionResults)
+            .totalColumnsScanned(scan.getTotalColumnsScanned())
+            .totalPiiColumnsFound(scan.getTotalPiiColumnsFound())
+            .scanStartTime(scan.getStartTime().atZone(ZoneId.systemDefault()).toInstant())
+            .scanEndTime(scan.getEndTime() != null ? scan.getEndTime().atZone(ZoneId.systemDefault()).toInstant() : null)
+            .databaseName(scan.getDatabaseName())
+            .databaseProductName(scan.getDatabaseProductName())
+            .databaseProductVersion(scan.getDatabaseProductVersion())
+            .build();
+    }
+
+    /**
+     * Gets the completed scan report as a DTO to avoid LazyInitializationException.
+     *
+     * @param jobId The UUID of the job
+     * @return The ComplianceReportDTO for the completed scan
+     * @throws IllegalArgumentException if the job ID is not found
+     * @throws IllegalStateException if the scan is not complete
+     */
+    @Transactional(readOnly = true)
+    public ComplianceReportDTO getScanReportAsDTO(UUID jobId) {
+        // First get the ComplianceReport entity (which is done inside a transaction)
+        ComplianceReport report = getScanReport(jobId);
+        
+        // Create and populate the DTO - all lazy collections are accessed within transaction
+        ComplianceReportDTO dto = ComplianceReportDTO.builder()
+            .scanId(report.getScanId())
+            .reportId(report.getReportId())
+            .databaseHost(report.getDatabaseHost())
+            .databaseName(report.getDatabaseName())
+            .databaseProductName(report.getDatabaseProductName())
+            .databaseProductVersion(report.getDatabaseProductVersion())
+            .totalTablesScanned(report.getTotalTablesScanned())
+            .totalColumnsScanned(report.getTotalColumnsScanned())
+            .totalPiiColumnsFound(report.getTotalPiiColumnsFound())
+            .scanStartTime(report.getScanStartTime())
+            .scanEndTime(report.getScanEndTime())
+            .scanDuration(report.getScanDuration())
+            .samplingConfig(report.getSamplingConfig())
+            .detectionConfig(report.getDetectionConfig())
+            .build();
+            
+        // Convert and add PII findings
+        List<ComplianceReportDTO.PiiColumnDTO> piiFindings = new ArrayList<>();
+        for (DetectionResult result : report.getPiiFindings()) {
+            // Access lazy-loaded collections within transaction
+            List<String> methods = new ArrayList<>(result.getDetectionMethods());
+            
+            piiFindings.add(ComplianceReportDTO.PiiColumnDTO.builder()
+                .tableName(result.getColumnInfo().getTable().getTableName())
+                .columnName(result.getColumnInfo().getColumnName())
+                .dataType(result.getColumnInfo().getDatabaseTypeName())
+                .piiType(result.getHighestConfidencePiiType())
+                .confidenceScore(result.getHighestConfidenceScore())
+                .detectionMethods(methods)
+                .build());
         }
-
-        return report;
+        dto.setPiiFindings(piiFindings);
+        
+        // If there's a summary, copy it
+        if (report.getSummary() != null) {
+            ComplianceReportDTO.ScanSummaryDTO summary = ComplianceReportDTO.ScanSummaryDTO.builder()
+                .tablesScanned(report.getSummary().getTablesScanned())
+                .columnsScanned(report.getSummary().getColumnsScanned())
+                .piiColumnsFound(report.getSummary().getPiiColumnsFound())
+                .totalPiiCandidates(report.getSummary().getTotalPiiCandidates())
+                .scanDurationMillis(report.getSummary().getScanDurationMillis())
+                .build();
+            // Note: The DTO doesn't have a setSummary method defined, so we're not setting it
+        }
+        
+        return dto;
     }
 
     /**
@@ -321,18 +449,191 @@ public class ScanOrchestrationService {
      * @throws IllegalStateException if the job is already completed or failed
      */
     public void cancelScan(UUID jobId) {
-        JobStatus status = jobStatusMap.get(jobId);
-        if (status == null) {
+        Optional<ScanMetadata> scanOpt = scanPersistenceService.getScanById(jobId);
+        if (!scanOpt.isPresent()) {
             throw new IllegalArgumentException("Job ID not found: " + jobId);
         }
-
-        if (status.getState() == JobState.COMPLETED || status.getState() == JobState.FAILED) {
-            throw new IllegalStateException("Cannot cancel job that is already " + status.getState());
+        
+        ScanMetadata scan = scanOpt.get();
+        
+        if (scan.getStatus() == ScanMetadata.ScanStatus.COMPLETED || 
+            scan.getStatus() == ScanMetadata.ScanStatus.FAILED) {
+            throw new IllegalStateException("Cannot cancel job that is already " + scan.getStatus());
         }
 
-        status.setState(JobState.FAILED);
-        status.setErrorMessage("Job cancelled by user request");
+        scanPersistenceService.failScan(jobId, "Job cancelled by user request");
         log.info("Job {}: Cancelled by user request", jobId);
+    }
+
+    /**
+     * Exports the scan report as CSV.
+     *
+     * @param jobId The UUID of the job
+     * @return The report content as CSV byte array
+     * @throws IllegalArgumentException if the job ID is not found
+     * @throws IllegalStateException if the scan is not complete
+     */
+    @Transactional
+    public byte[] exportReportAsCsv(UUID jobId) {
+        // Check if job is completed first
+        try {
+            ScanJobResponse jobResponse = getJobStatus(jobId);
+            if (!jobResponse.isCompleted()) {
+                throw new IllegalStateException("Scan job is not completed. Current state: " + jobResponse.getStatus());
+            }
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Job ID not found: " + jobId);
+        }
+        
+        // Eager loading of DetectionResult with detectionMethods to avoid LazyInitializationException
+        List<DetectionResult> detectionResults = scanPersistenceService.getPiiResultsByScanId(jobId);
+        
+        // Force initialization of detectionMethods collection for each result
+        for (DetectionResult result : detectionResults) {
+            if (result != null) {
+                // Access the collection to force initialization while session is still open
+                result.getDetectionMethods().size();
+            }
+        }
+        
+        ScanMetadata scan = scanPersistenceService.getScanById(jobId)
+            .orElseThrow(() -> new IllegalArgumentException("Scan data not found in database: " + jobId));
+            
+        // Build report with the eagerly loaded detection results
+        DatabaseConnectionInfo connectionInfo = connectionRepository.findById(scan.getConnectionId())
+            .orElseThrow(() -> new IllegalArgumentException("Connection ID not found: " + scan.getConnectionId()));
+            
+        ComplianceReport report = ComplianceReport.builder()
+            .scanId(scan.getId())
+            .reportId(UUID.randomUUID().toString())
+            .connectionInfo(connectionInfo)
+            .piiFindings(detectionResults)
+            .totalColumnsScanned(scan.getTotalColumnsScanned())
+            .totalPiiColumnsFound(scan.getTotalPiiColumnsFound())
+            .scanStartTime(scan.getStartTime().atZone(ZoneId.systemDefault()).toInstant())
+            .scanEndTime(scan.getEndTime() != null ? scan.getEndTime().atZone(ZoneId.systemDefault()).toInstant() : null)
+            .databaseHost(connectionInfo.getHost())
+            .databaseName(scan.getDatabaseName())
+            .databaseProductName(scan.getDatabaseProductName())
+            .databaseProductVersion(scan.getDatabaseProductVersion())
+            .build();
+        
+        // Get the report generator to convert the report to CSV
+        return reportGenerator.exportReportAsCsv(report);
+    }
+
+    /**
+     * Exports the scan report as plain text.
+     *
+     * @param jobId The UUID of the job
+     * @return The report content as text byte array
+     * @throws IllegalArgumentException if the job ID is not found
+     * @throws IllegalStateException if the scan is not complete
+     */
+    @Transactional
+    public byte[] exportReportAsText(UUID jobId) {
+        // Check if job is completed first
+        try {
+            ScanJobResponse jobResponse = getJobStatus(jobId);
+            if (!jobResponse.isCompleted()) {
+                throw new IllegalStateException("Scan job is not completed. Current state: " + jobResponse.getStatus());
+            }
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Job ID not found: " + jobId);
+        }
+        
+        // Eager loading of DetectionResult with detectionMethods to avoid LazyInitializationException
+        List<DetectionResult> detectionResults = scanPersistenceService.getPiiResultsByScanId(jobId);
+        
+        // Force initialization of detectionMethods collection for each result
+        for (DetectionResult result : detectionResults) {
+            if (result != null) {
+                // Access the collection to force initialization while session is still open
+                result.getDetectionMethods().size();
+            }
+        }
+        
+        ScanMetadata scan = scanPersistenceService.getScanById(jobId)
+            .orElseThrow(() -> new IllegalArgumentException("Scan data not found in database: " + jobId));
+            
+        // Build report with the eagerly loaded detection results
+        DatabaseConnectionInfo connectionInfo = connectionRepository.findById(scan.getConnectionId())
+            .orElseThrow(() -> new IllegalArgumentException("Connection ID not found: " + scan.getConnectionId()));
+            
+        ComplianceReport report = ComplianceReport.builder()
+            .scanId(scan.getId())
+            .reportId(UUID.randomUUID().toString())
+            .connectionInfo(connectionInfo)
+            .piiFindings(detectionResults)
+            .totalColumnsScanned(scan.getTotalColumnsScanned())
+            .totalPiiColumnsFound(scan.getTotalPiiColumnsFound())
+            .scanStartTime(scan.getStartTime().atZone(ZoneId.systemDefault()).toInstant())
+            .scanEndTime(scan.getEndTime() != null ? scan.getEndTime().atZone(ZoneId.systemDefault()).toInstant() : null)
+            .databaseHost(connectionInfo.getHost())
+            .databaseName(scan.getDatabaseName())
+            .databaseProductName(scan.getDatabaseProductName())
+            .databaseProductVersion(scan.getDatabaseProductVersion())
+            .build();
+        
+        // Get the report generator to convert the report to plain text
+        return reportGenerator.exportReportAsText(report);
+    }
+
+    /**
+     * Exports the scan report as PDF.
+     *
+     * @param jobId The UUID of the job
+     * @return The report content as PDF byte array
+     * @throws IllegalArgumentException if the job ID is not found
+     * @throws IllegalStateException if the scan is not complete
+     */
+    @Transactional
+    public byte[] exportReportAsPdf(UUID jobId) {
+        // Check if job is completed first
+        try {
+            ScanJobResponse jobResponse = getJobStatus(jobId);
+            if (!jobResponse.isCompleted()) {
+                throw new IllegalStateException("Scan job is not completed. Current state: " + jobResponse.getStatus());
+            }
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Job ID not found: " + jobId);
+        }
+        
+        // Eager loading of DetectionResult with detectionMethods to avoid LazyInitializationException
+        List<DetectionResult> detectionResults = scanPersistenceService.getPiiResultsByScanId(jobId);
+        
+        // Force initialization of detectionMethods collection for each result
+        for (DetectionResult result : detectionResults) {
+            if (result != null) {
+                // Access the collection to force initialization while session is still open
+                result.getDetectionMethods().size();
+            }
+        }
+        
+        ScanMetadata scan = scanPersistenceService.getScanById(jobId)
+            .orElseThrow(() -> new IllegalArgumentException("Scan data not found in database: " + jobId));
+            
+        // Build report with the eagerly loaded detection results
+        DatabaseConnectionInfo connectionInfo = connectionRepository.findById(scan.getConnectionId())
+            .orElseThrow(() -> new IllegalArgumentException("Connection ID not found: " + scan.getConnectionId()));
+            
+        ComplianceReport report = ComplianceReport.builder()
+            .scanId(scan.getId())
+            .reportId(UUID.randomUUID().toString())
+            .connectionInfo(connectionInfo)
+            .piiFindings(detectionResults)
+            .totalColumnsScanned(scan.getTotalColumnsScanned())
+            .totalPiiColumnsFound(scan.getTotalPiiColumnsFound())
+            .scanStartTime(scan.getStartTime().atZone(ZoneId.systemDefault()).toInstant())
+            .scanEndTime(scan.getEndTime() != null ? scan.getEndTime().atZone(ZoneId.systemDefault()).toInstant() : null)
+            .databaseHost(connectionInfo.getHost())
+            .databaseName(scan.getDatabaseName())
+            .databaseProductName(scan.getDatabaseProductName())
+            .databaseProductVersion(scan.getDatabaseProductVersion())
+            .build();
+        
+        // Get the report generator to convert the report to PDF
+        return reportGenerator.exportReportAsPdf(report);
     }
 
     /**
@@ -383,6 +684,8 @@ public class ScanOrchestrationService {
                         request.getNerThreshold() : detectionConfigProps.getThresholds().getNer())
                 .reportingThreshold(detectionConfigProps.getThresholds().getReporting())
                 .stopPipelineOnHighConfidence(detectionConfigProps.isStopPipelineOnHighConfidence())
+                .entropyCalculationEnabled(request.getEntropyCalculationEnabled() != null ? 
+                        request.getEntropyCalculationEnabled() : detectionConfigProps.isEntropyEnabled())
                 .build();
     }
 }

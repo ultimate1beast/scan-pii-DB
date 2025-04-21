@@ -1,5 +1,6 @@
 package com.privsense.db.service.impl;
 
+import com.privsense.core.repository.ConnectionRepository;
 import com.privsense.core.exception.DatabaseConnectionException;
 import com.privsense.core.model.DatabaseConnectionInfo;
 import com.privsense.core.service.DatabaseConnector;
@@ -32,25 +33,24 @@ public class DatabaseConnectorImpl implements DatabaseConnector {
     
     private final JdbcDriverLoader jdbcDriverLoader;
     private final DatabaseConnectionConfig connectionConfig;
+    private final ConnectionRepository connectionRepository;
     
-    // Maps connection IDs to connection pools
+    // Maps connection IDs to connection pools (kept in memory for performance)
     private final Map<UUID, HikariDataSource> dataSources = new ConcurrentHashMap<>();
     
-    // Maps connection IDs to connection info
-    private final Map<UUID, DatabaseConnectionInfo> connectionInfoMap = new ConcurrentHashMap<>();
-    
     @Autowired
-    public DatabaseConnectorImpl(JdbcDriverLoader jdbcDriverLoader, DatabaseConnectionConfig connectionConfig) {
+    public DatabaseConnectorImpl(
+            JdbcDriverLoader jdbcDriverLoader, 
+            DatabaseConnectionConfig connectionConfig,
+            ConnectionRepository connectionRepository) {
         this.jdbcDriverLoader = jdbcDriverLoader;
         this.connectionConfig = connectionConfig;
+        this.connectionRepository = connectionRepository;
     }
     
     @Override
     public UUID connect(DatabaseConnectionInfo connectionInfo) {
         Objects.requireNonNull(connectionInfo, "Connection info cannot be null");
-        
-        // Generate a unique ID for this connection
-        UUID connectionId = UUID.randomUUID();
         
         try {
             // Load driver dynamically if specified
@@ -81,10 +81,7 @@ public class DatabaseConnectorImpl implements DatabaseConnector {
                 logger.info("Connected to {} {}", dbProductName, dbProductVersion);
             }
             
-            // Store the data source and connection info for later retrieval
-            dataSources.put(connectionId, dataSource);
-            
-            // Create a copy of the connection info without the password
+            // Create a copy of the connection info without the password for security
             DatabaseConnectionInfo safeConnectionInfo = DatabaseConnectionInfo.builder()
                     .host(connectionInfo.getHost())
                     .port(connectionInfo.getPort())
@@ -93,8 +90,12 @@ public class DatabaseConnectorImpl implements DatabaseConnector {
                     .jdbcDriverClass(connectionInfo.getJdbcDriverClass())
                     .sslEnabled(connectionInfo.getSslEnabled())
                     .build();
-                    
-            connectionInfoMap.put(connectionId, safeConnectionInfo);
+            
+            // Save the connection info in the persistent repository
+            UUID connectionId = connectionRepository.save(safeConnectionInfo);
+            
+            // Store the data source for later retrieval
+            dataSources.put(connectionId, dataSource);
             
             logger.info("Database connection established: ID={}, URL={}", 
                     connectionId, connectionInfo.buildJdbcUrl().replaceAll("password=.*?(&|$)", "password=***$1"));
@@ -114,7 +115,9 @@ public class DatabaseConnectorImpl implements DatabaseConnector {
         }
         
         HikariDataSource dataSource = dataSources.remove(connectionId);
-        connectionInfoMap.remove(connectionId);
+        
+        // Remove from the persistent repository
+        connectionRepository.deleteById(connectionId);
         
         if (dataSource != null) {
             // Close the pool gracefully
@@ -175,13 +178,8 @@ public class DatabaseConnectorImpl implements DatabaseConnector {
             throw new DatabaseConnectionException("Connection ID cannot be null");
         }
         
-        DatabaseConnectionInfo info = connectionInfoMap.get(connectionId);
-        
-        if (info == null) {
-            throw new DatabaseConnectionException("Connection not found: " + connectionId);
-        }
-        
-        return info; // Safe copy without password
+        return connectionRepository.findById(connectionId)
+            .orElseThrow(() -> new DatabaseConnectionException("Connection not found: " + connectionId));
     }
     
     /**
@@ -248,7 +246,6 @@ public class DatabaseConnectorImpl implements DatabaseConnector {
         }
         
         dataSources.clear();
-        connectionInfoMap.clear();
         
         logger.info("All database connection pools have been shut down");
     }

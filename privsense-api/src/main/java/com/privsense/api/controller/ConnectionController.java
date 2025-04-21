@@ -4,7 +4,7 @@ import com.privsense.api.dto.ConnectionResponse;
 import com.privsense.api.dto.DatabaseConnectionRequest;
 import com.privsense.api.exception.ResourceNotFoundException;
 import com.privsense.api.mapper.DtoMapper;
-import com.privsense.api.repository.ConnectionRepository;
+import com.privsense.api.repository.jpa.ConnectionJpaRepository;
 import com.privsense.core.exception.DatabaseConnectionException;
 import com.privsense.core.model.DatabaseConnectionInfo;
 import com.privsense.core.model.SchemaInfo;
@@ -35,7 +35,7 @@ public class ConnectionController {
 
     private final DatabaseConnector databaseConnector;
     private final MetadataExtractor metadataExtractor;
-    private final ConnectionRepository connectionRepository;
+    private final ConnectionJpaRepository connectionRepository;
     private final DtoMapper dtoMapper;
 
     /**
@@ -100,9 +100,38 @@ public class ConnectionController {
         description = "Returns a list of all active database connections"
     )
     public ResponseEntity<List<ConnectionResponse>> listConnections() {
-        // In a real implementation, we would have a method to retrieve all connections
-        // For now, returning an empty list as a placeholder
-        return ResponseEntity.ok(new ArrayList<>());
+        // Get all connections from the repository
+        List<DatabaseConnectionInfo> connections = connectionRepository.findAll();
+        
+        // Map all connections to DTOs with additional status information
+        List<ConnectionResponse> responseList = new ArrayList<>();
+        
+        for (DatabaseConnectionInfo connectionInfo : connections) {
+            ConnectionResponse response = dtoMapper.toDto(connectionInfo);
+            response.setConnectionId(connectionInfo.getId());
+            
+            // Check if the connection is valid
+            try {
+                boolean isValid = databaseConnector.isConnectionValid(connectionInfo.getId());
+                response.setStatus(isValid ? "AVAILABLE" : "UNAVAILABLE");
+                
+                // Only try to get product info if the connection is valid
+                if (isValid) {
+                    try (Connection connection = databaseConnector.getConnection(connectionInfo.getId())) {
+                        response.setDatabaseProductName(connection.getMetaData().getDatabaseProductName());
+                        response.setDatabaseProductVersion(connection.getMetaData().getDatabaseProductVersion());
+                    }
+                }
+            } catch (Exception e) {
+                response.setStatus("ERROR");
+                // Log the error but don't throw it to avoid disrupting the list
+                System.err.println("Error checking connection " + connectionInfo.getId() + ": " + e.getMessage());
+            }
+            
+            responseList.add(response);
+        }
+        
+        return ResponseEntity.ok(responseList);
     }
 
     /**
@@ -125,8 +154,24 @@ public class ConnectionController {
         // Map domain model to DTO using DtoMapper
         ConnectionResponse response = dtoMapper.toDto(connectionInfo);
         response.setConnectionId(connectionId);
-        response.setStatus("AVAILABLE");
-                
+        
+        // Check connection and get the database product information
+        try {
+            boolean isValid = databaseConnector.isConnectionValid(connectionId);
+            response.setStatus(isValid ? "AVAILABLE" : "UNAVAILABLE");
+            
+            if (isValid) {
+                try (Connection connection = databaseConnector.getConnection(connectionId)) {
+                    response.setDatabaseProductName(connection.getMetaData().getDatabaseProductName());
+                    response.setDatabaseProductVersion(connection.getMetaData().getDatabaseProductVersion());
+                }
+            }
+        } catch (SQLException e) {
+            response.setStatus("ERROR");
+            // Log the error but don't throw it since we want to return the connection info anyway
+            System.err.println("Error retrieving database product information: " + e.getMessage());
+        }
+        
         return ResponseEntity.ok(response);
     }
 

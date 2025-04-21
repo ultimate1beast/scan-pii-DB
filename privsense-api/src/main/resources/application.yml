@@ -6,6 +6,31 @@ server:
 spring:
   application:
     name: privsense
+  main:
+    allow-bean-definition-overriding: true
+    
+  # Database Configuration
+  datasource:
+    url: jdbc:postgresql://localhost:5432/privsense
+    username: postgres
+    password: pass123
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 30000
+      connection-timeout: 20000
+  
+  # JPA Configuration
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: false
+        show_sql: false
+    open-in-view: false
 
 # PrivSense specific configurations
 privsense:
@@ -18,6 +43,7 @@ privsense:
   sampling:
     default-size: 1000
     max-concurrent-db-queries: 5
+    entropy-calculation-enabled: true
     methods:
       default: RANDOM
   
@@ -43,3 +69,4 @@ logging:
     root: INFO
     com.privsense: DEBUG
     org.springframework.web: INFO
+    org.hibernate: INFO

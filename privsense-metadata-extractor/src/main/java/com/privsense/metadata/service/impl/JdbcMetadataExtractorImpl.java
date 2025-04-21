@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -268,5 +269,32 @@ public class JdbcMetadataExtractorImpl implements MetadataExtractor {
         }
         
         return null;
+    }
+
+    @Override
+    public List<String> getTableColumns(Connection connection, String tableName) {
+        List<String> columnNames = new ArrayList<>();
+        
+        try {
+            // Extract metadata for just this single table
+            SchemaInfo schemaInfo = extractMetadataForTables(connection, List.of(tableName));
+            
+            // If the table was found, extract column names
+            if (schemaInfo != null && !schemaInfo.getTables().isEmpty()) {
+                TableInfo table = schemaInfo.getTables().get(0);
+                for (ColumnInfo column : table.getColumns()) {
+                    columnNames.add(column.getColumnName());
+                }
+                
+                logger.debug("Found {} columns for table {}", columnNames.size(), tableName);
+            } else {
+                logger.warn("No table found with name: {}", tableName);
+            }
+            
+            return columnNames;
+            
+        } catch (Exception e) {
+            throw new MetadataExtractionException("Failed to get columns for table: " + tableName, e);
+        }
     }
 }

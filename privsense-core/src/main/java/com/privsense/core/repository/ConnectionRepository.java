@@ -1,7 +1,8 @@
-package com.privsense.api.repository;
+package com.privsense.core.repository;
 
 import com.privsense.core.model.DatabaseConnectionInfo;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -41,4 +42,11 @@ public interface ConnectionRepository {
      * @return true if the connection was deleted, false if it didn't exist
      */
     boolean deleteById(UUID connectionId);
+    
+    /**
+     * Retrieves all database connections.
+     *
+     * @return a list of all database connections
+     */
+    List<DatabaseConnectionInfo> findAll();
 }

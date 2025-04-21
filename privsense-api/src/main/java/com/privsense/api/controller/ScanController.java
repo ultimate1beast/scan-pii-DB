@@ -2,6 +2,7 @@ package com.privsense.api.controller;
 
 import com.privsense.api.dto.ScanJobResponse;
 import com.privsense.api.dto.ScanRequest;
+import com.privsense.api.dto.ComplianceReportDTO;
 import com.privsense.api.exception.ConflictException;
 import com.privsense.api.exception.ResourceNotFoundException;
 import com.privsense.api.service.ScanOrchestrationService;
@@ -10,6 +11,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -40,11 +42,13 @@ public class ScanController {
     @ApiResponse(responseCode = "201", description = "Scan job created")
     @ApiResponse(responseCode = "400", description = "Invalid request parameters")
     @ApiResponse(responseCode = "404", description = "Database connection not found")
-    public ResponseEntity<Void> startScan(@Valid @RequestBody ScanRequest request) {
+    public ResponseEntity<ScanJobResponse> startScan(@Valid @RequestBody ScanRequest request) {
         UUID jobId = scanService.submitScanJob(request);
+        // Get the job status to return in the response
+        ScanJobResponse jobResponse = scanService.getJobStatus(jobId);
         return ResponseEntity
                 .created(URI.create("/api/v1/scans/" + jobId))
-                .build();
+                .body(jobResponse);
     }
 
     /**
@@ -68,41 +72,84 @@ public class ScanController {
     }
 
     /**
-     * Gets the report for a completed scan.
-     */
-    @GetMapping(value = "/{jobId}/report", produces = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(
-        summary = "Get scan report",
-        description = "Returns the full scan report with PII findings for a completed scan"
-    )
-    @ApiResponse(responseCode = "200", description = "Report retrieved successfully")
-    @ApiResponse(responseCode = "404", description = "Scan job not found")
-    @ApiResponse(responseCode = "409", description = "Scan not completed yet")
-    public ResponseEntity<ComplianceReport> getScanReport(@PathVariable UUID jobId) {
-        ComplianceReport report = scanService.getScanReport(jobId);
-        return ResponseEntity.ok(report);
-    }
-
-    /**
      * Exports the scan report in various formats.
      */
-    @GetMapping(value = "/{jobId}/report", produces = {
-            "application/csv", 
-            "text/plain", 
-            "application/pdf"
-    })
+    @GetMapping(value = "/{jobId}/report")
     @Operation(
         summary = "Export scan report in specific format",
-        description = "Exports the scan report in various formats (CSV, text, PDF)"
+        description = "Exports the scan report in various formats (CSV, text, PDF, JSON)"
     )
-    public ResponseEntity<byte[]> exportScanReport(
+    @ApiResponse(responseCode = "200", description = "Report exported successfully")
+    @ApiResponse(responseCode = "404", description = "Scan job not found")
+    @ApiResponse(responseCode = "409", description = "Scan not completed yet")
+    @ApiResponse(responseCode = "415", description = "Requested format not supported")
+    public ResponseEntity<?> exportScanReport(
             @PathVariable UUID jobId,
-            @RequestHeader("Accept") String format) {
+            @RequestParam(required = false) String format,
+            HttpServletRequest request) {
         
-        // This would be implemented based on the specific format requested
-        // For now, we'll return a simple placeholder response
-        String mockReport = "Mock report for scan job: " + jobId;
-        return ResponseEntity.ok(mockReport.getBytes());
+        // Check if the scan exists and is completed
+        try {
+            ScanJobResponse jobStatus = scanService.getJobStatus(jobId);
+            if (!jobStatus.isCompleted()) {
+                throw new ConflictException("Scan report not available: scan is not completed yet");
+            }
+        } catch (IllegalArgumentException e) {
+            throw new ResourceNotFoundException("Scan job not found: " + jobId);
+        }
+        
+        // Get the Accept header for format determination
+        String acceptHeader = request.getHeader("Accept");
+        String requestedFormat = format != null ? format.toLowerCase() : "csv"; // Default format
+        
+        // If format parameter is not provided, try to determine from Accept header
+        if (format == null && acceptHeader != null) {
+            acceptHeader = acceptHeader.toLowerCase();
+            if (acceptHeader.contains("json")) {
+                requestedFormat = "json";
+            } else if (acceptHeader.contains("pdf")) {
+                requestedFormat = "pdf";
+            } else if (acceptHeader.contains("plain")) {
+                requestedFormat = "text";
+            } else if (acceptHeader.contains("csv")) {
+                requestedFormat = "csv";
+            }
+        }
+        
+        // Handle each format type
+        switch (requestedFormat) {
+            case "json":
+                // Use a DTO to avoid LazyInitializationException
+                ComplianceReportDTO reportDTO = scanService.getScanReportAsDTO(jobId);
+                return ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(reportDTO);
+                
+            case "pdf":
+                byte[] pdfContent = scanService.exportReportAsPdf(jobId);
+                return ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_PDF)
+                        .header("Content-Disposition", "attachment; filename=\"privsense_scan_report_" + jobId + ".pdf\"")
+                        .header("Content-Length", String.valueOf(pdfContent.length))
+                        .body(pdfContent);
+                
+            case "text":
+                byte[] textContent = scanService.exportReportAsText(jobId);
+                return ResponseEntity.ok()
+                        .contentType(MediaType.TEXT_PLAIN)
+                        .header("Content-Disposition", "attachment; filename=\"privsense_scan_report_" + jobId + ".txt\"")
+                        .header("Content-Length", String.valueOf(textContent.length))
+                        .body(textContent);
+                
+            case "csv":
+            default:
+                byte[] csvContent = scanService.exportReportAsCsv(jobId);
+                return ResponseEntity.ok()
+                        .contentType(MediaType.parseMediaType("text/csv"))
+                        .header("Content-Disposition", "attachment; filename=\"privsense_scan_report_" + jobId + ".csv\"")
+                        .header("Content-Length", String.valueOf(csvContent.length))
+                        .body(csvContent);
+        }
     }
 
     /**

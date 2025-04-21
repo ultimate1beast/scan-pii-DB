@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 public class DetectionConfigProperties {
     private Thresholds thresholds = new Thresholds();
     private boolean stopPipelineOnHighConfidence = true;
+    private boolean entropyEnabled = false;
     
     @Data
     public static class Thresholds {

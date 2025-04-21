@@ -31,6 +31,16 @@ public interface MetadataExtractor {
     SchemaInfo extractMetadataForTables(Connection connection, List<String> tableNames);
     
     /**
+     * Gets the list of column names for a specific table.
+     * 
+     * @param connection The active database connection
+     * @param tableName The name of the table to get columns for
+     * @return A list of column names
+     * @throws com.privsense.core.exception.MetadataExtractionException if extraction fails
+     */
+    List<String> getTableColumns(Connection connection, String tableName);
+    
+    /**
      * Detects the database type from the connection.
      * 
      * @param connection The active database connection

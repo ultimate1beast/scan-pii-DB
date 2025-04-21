@@ -16,4 +16,28 @@ public interface ReportGenerator {
      * @return A ComplianceReport containing the formatted scan results
      */
     ComplianceReport generateReport(ScanContext scanContext);
+    
+    /**
+     * Exports a report to CSV format.
+     *
+     * @param report The compliance report to export
+     * @return The report content as CSV byte array
+     */
+    byte[] exportReportAsCsv(ComplianceReport report);
+    
+    /**
+     * Exports a report to plain text format.
+     *
+     * @param report The compliance report to export
+     * @return The report content as text byte array
+     */
+    byte[] exportReportAsText(ComplianceReport report);
+    
+    /**
+     * Exports a report to PDF format.
+     *
+     * @param report The compliance report to export
+     * @return The report content as PDF byte array
+     */
+    byte[] exportReportAsPdf(ComplianceReport report);
 }

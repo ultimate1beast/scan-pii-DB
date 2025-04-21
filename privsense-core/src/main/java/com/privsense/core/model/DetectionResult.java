@@ -1,17 +1,44 @@
 package com.privsense.core.model;
 
+import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Aggregates all PII candidates found for a specific column after running the full detection pipeline.
  */
+@Entity
+@Table(name = "detection_results")
 public class DetectionResult {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+    
+    @ManyToOne
+    @JoinColumn(name = "scan_id")
+    private ScanMetadata scanMetadata;
+
+    @ManyToOne
+    @JoinColumn(name = "column_id")
     private ColumnInfo columnInfo;
+    
+    @OneToMany(mappedBy = "detectionResult", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PiiCandidate> candidates;
+    
+    @Column(name = "highest_confidence_pii_type")
     private String highestConfidencePiiType;
+    
+    @Column(name = "highest_confidence_score")
     private double highestConfidenceScore;
+    
+    @ElementCollection
+    @CollectionTable(name = "detection_methods", joinColumns = @JoinColumn(name = "result_id"))
+    @Column(name = "method_name")
     private List<String> detectionMethods;
 
     public DetectionResult() {
@@ -22,6 +49,22 @@ public class DetectionResult {
     public DetectionResult(ColumnInfo columnInfo) {
         this();
         this.columnInfo = columnInfo;
+    }
+
+    public UUID getId() {
+        return id;
+    }
+    
+    public void setId(UUID id) {
+        this.id = id;
+    }
+    
+    public ScanMetadata getScanMetadata() {
+        return scanMetadata;
+    }
+    
+    public void setScanMetadata(ScanMetadata scanMetadata) {
+        this.scanMetadata = scanMetadata;
     }
 
     public ColumnInfo getColumnInfo() {
@@ -47,6 +90,7 @@ public class DetectionResult {
             this.candidates = new ArrayList<>();
         }
         this.candidates.add(candidate);
+        candidate.setDetectionResult(this);
         updateHighestConfidence();
         
         if (!detectionMethods.contains(candidate.getDetectionMethod())) {
@@ -106,7 +150,9 @@ public class DetectionResult {
     @Override
     public String toString() {
         return "DetectionResult{" +
-                "columnInfo=" + columnInfo +
+                "id=" + id +
+                ", scanMetadata=" + scanMetadata +
+                ", columnInfo=" + columnInfo +
                 ", highestConfidencePiiType='" + highestConfidencePiiType + '\'' +
                 ", highestConfidenceScore=" + highestConfidenceScore +
                 ", detectionMethods=" + detectionMethods +

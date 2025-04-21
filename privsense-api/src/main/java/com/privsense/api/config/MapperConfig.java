@@ -10,8 +10,6 @@ import com.privsense.core.model.DatabaseConnectionInfo;
 import com.privsense.core.model.DetectionConfig;
 import com.privsense.core.model.SamplingConfig;
 import org.modelmapper.ModelMapper;
-import org.modelmapper.PropertyMap;
-import org.modelmapper.Conditions;
 import org.modelmapper.Converter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

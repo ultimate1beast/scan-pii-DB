@@ -1,14 +1,37 @@
 package com.privsense.core.model;
 
+import jakarta.persistence.*;
+import java.util.UUID;
+
 /**
  * Represents a potential PII finding within a column.
  */
+@Entity
+@Table(name = "pii_candidates")
 public class PiiCandidate {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @ManyToOne
+    @JoinColumn(name = "result_id")
+    private DetectionResult detectionResult;
+
+    @ManyToOne
+    @JoinColumn(name = "column_id")
     private ColumnInfo columnInfo;
+
+    @Column(name = "pii_type", nullable = false)
     private String piiType;
+
+    @Column(name = "confidence_score", nullable = false)
     private double confidenceScore;
+
+    @Column(name = "detection_method", nullable = false)
     private String detectionMethod;
+
+    @Column(name = "evidence", columnDefinition = "TEXT")
     private String evidence;
 
     public PiiCandidate() {
@@ -24,6 +47,22 @@ public class PiiCandidate {
     public PiiCandidate(ColumnInfo columnInfo, String piiType, double confidenceScore, String detectionMethod, String evidence) {
         this(columnInfo, piiType, confidenceScore, detectionMethod);
         this.evidence = evidence;
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public DetectionResult getDetectionResult() {
+        return detectionResult;
+    }
+
+    public void setDetectionResult(DetectionResult detectionResult) {
+        this.detectionResult = detectionResult;
     }
 
     public ColumnInfo getColumnInfo() {
@@ -69,7 +108,7 @@ public class PiiCandidate {
     @Override
     public String toString() {
         return "PiiCandidate{" +
-                "columnInfo=" + columnInfo +
+                "id=" + id +
                 ", piiType='" + piiType + '\'' +
                 ", confidenceScore=" + confidenceScore +
                 ", detectionMethod='" + detectionMethod + '\'' +

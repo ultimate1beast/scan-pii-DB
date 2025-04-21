@@ -1,10 +1,16 @@
 package com.privsense.core.model;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.util.UUID; // Import UUID
+import java.util.UUID;
 
 /**
  * Holds all necessary details to establish a database connection.
@@ -15,19 +21,40 @@ import java.util.UUID; // Import UUID
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@Entity
+@Table(name = "privsense_database_connections")
 public class DatabaseConnectionInfo {
     
-    private UUID id; // Add ID field
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+    
+    @Column(nullable = false)
     private String host;
+    
+    @Column(nullable = false)
     private Integer port;
+    
+    @Column(name = "database_name", nullable = false)
     private String databaseName;
+    
+    @Column(nullable = false)
     private String username;
+    
+    @Column
     private String password;
+    
+    @Column(name = "jdbc_driver_class", nullable = false)
     private String jdbcDriverClass;
     
     // SSL parameters
+    @Column(name = "ssl_enabled")
     private Boolean sslEnabled;
+    
+    @Column(name = "ssl_trust_store_path")
     private String sslTrustStorePath;
+    
+    @Column(name = "ssl_trust_store_password")
     private String sslTrustStorePassword;
     
     /**

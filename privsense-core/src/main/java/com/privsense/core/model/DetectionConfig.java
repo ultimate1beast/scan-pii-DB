@@ -39,4 +39,9 @@ public class DetectionConfig {
      * Whether to stop the detection pipeline when high-confidence PII is found.
      */
     private Boolean stopPipelineOnHighConfidence;
+    
+    /**
+     * Whether to enable entropy calculation during PII detection.
+     */
+    private Boolean entropyCalculationEnabled;
 }
