@@ -11,7 +11,7 @@ import org.springframework.context.annotation.ComponentScan;
  */
 @SpringBootApplication
 @EnableAsync
-@ComponentScan(basePackages = {"com.privsense.api", "com.privsense.db", "com.privsense.metadata", "com.privsense.sampler", "com.privsense.pii", "com.privsense.reporter"})
+@ComponentScan(basePackages = {"com.privsense.api", "com.privsense.core", "com.privsense.db", "com.privsense.metadata", "com.privsense.sampler", "com.privsense.pii", "com.privsense.reporter"})
 public class PrivSenseApplication {
 
     public static void main(String[] args) {

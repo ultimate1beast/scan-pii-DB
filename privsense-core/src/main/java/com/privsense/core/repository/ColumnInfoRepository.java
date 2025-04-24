@@ -1,7 +1,7 @@
 package com.privsense.core.repository;
 
 import com.privsense.core.model.ColumnInfo;
-import com.privsense.core.model.TableInfo;
+
 
 import java.util.Collection;
 import java.util.List;

@@ -44,16 +44,15 @@ privsense:
     default-size: 10
     max-concurrent-db-queries: 5
     entropy-calculation-enabled: true
-    methods:
-      default: RANDOM
+    default-method: RANDOM
   
   detection:
-    thresholds:
-      heuristic: 0.7
-      regex: 0.8
-      ner: 0.6
-      reporting: 0.5
+    heuristic-threshold: 0.7
+    regex-threshold: 0.8
+    ner-threshold: 0.6
+    reporting-threshold: 0.5
     stop-pipeline-on-high-confidence: true
+    entropy-enabled: false
   
   ner:
     service:
@@ -63,6 +62,16 @@ privsense:
         enabled: true
         failure-threshold: 5
         reset-timeout-seconds: 30
+        
+  db:
+    pool:
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      minimum-idle: 5
+      maximum-pool-size: 10
+    jdbc:
+      driver-dir: ./drivers
 
 logging:
   level:

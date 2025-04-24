@@ -3,9 +3,9 @@ package com.privsense.sampler;
 import com.privsense.core.exception.DataSamplingException;
 import com.privsense.core.model.ColumnInfo;
 import com.privsense.core.model.SampleData;
+
 import com.privsense.core.model.SchemaInfo;
-import com.privsense.core.service.DataSampler;
-import com.privsense.sampler.config.SamplingConfig;
+import com.privsense.core.service.ConsolidatedSampler;
 import com.privsense.sampler.factory.SamplingStrategyFactory;
 import com.privsense.sampler.strategy.DbSpecificSamplingStrategy;
 import com.privsense.sampler.util.EntropyCalculator;
@@ -27,33 +27,35 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 /**
- * Implementation of DataSampler that performs parallel sampling of columns
+ * Implementation of ConsolidatedSampler that performs parallel sampling of columns
  * with database-specific optimizations and concurrency control.
+ * 
+ * This class combines the functionality from both ParallelSamplerImpl and SamplerAdapter.
  */
 @Service
-public class ParallelSamplerImpl implements DataSampler {
+public class ConsolidatedSamplerImpl implements ConsolidatedSampler {
 
-    private static final Logger logger = LoggerFactory.getLogger(ParallelSamplerImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(ConsolidatedSamplerImpl.class);
 
-    private final SamplingConfig samplingConfig;
+    private final com.privsense.sampler.config.SamplingConfig samplerConfig;
     private final SamplingStrategyFactory strategyFactory;
     private final EntropyCalculator entropyCalculator;
     private final ExecutorService executorService;
     private final Semaphore dbQuerySemaphore;
 
     /**
-     * Creates a new ParallelSamplerImpl with the provided dependencies.
+     * Creates a new ConsolidatedSamplerImpl with the provided dependencies.
      *
-     * @param samplingConfig The configuration for sampling
+     * @param samplerConfig The configuration for sampling
      * @param strategyFactory The factory for database-specific strategies
      * @param entropyCalculator The calculator for entropy values
      */
     @Autowired
-    public ParallelSamplerImpl(
-            SamplingConfig samplingConfig,
+    public ConsolidatedSamplerImpl(
+            com.privsense.sampler.config.SamplingConfig samplerConfig,
             SamplingStrategyFactory strategyFactory,
             EntropyCalculator entropyCalculator) {
-        this.samplingConfig = samplingConfig;
+        this.samplerConfig = samplerConfig;
         this.strategyFactory = strategyFactory;
         this.entropyCalculator = entropyCalculator;
         
@@ -63,10 +65,10 @@ public class ParallelSamplerImpl implements DataSampler {
         this.executorService = Executors.newFixedThreadPool(corePoolSize);
         
         // Create a semaphore to limit concurrent database queries
-        this.dbQuerySemaphore = new Semaphore(samplingConfig.getMaxConcurrentDbQueries());
+        this.dbQuerySemaphore = new Semaphore(samplerConfig.getMaxConcurrentDbQueries());
         
-        logger.info("Initialized ParallelSampler with thread pool size: {} and max concurrent DB queries: {}", 
-                corePoolSize, samplingConfig.getMaxConcurrentDbQueries());
+        logger.info("Initialized ConsolidatedSampler with thread pool size: {} and max concurrent DB queries: {}", 
+                corePoolSize, samplerConfig.getMaxConcurrentDbQueries());
     }
 
     @Override
@@ -109,7 +111,7 @@ public class ParallelSamplerImpl implements DataSampler {
             }
             
             // Calculate entropy if required by configuration
-            if (samplingConfig.isEntropyCalculationEnabled()) {
+            if (samplerConfig.isEntropyCalculationEnabled()) {
                 double entropy = entropyCalculator.calculateEntropy(sampleData);
                 sampleData.setEntropy(entropy);
             }
@@ -187,13 +189,13 @@ public class ParallelSamplerImpl implements DataSampler {
                     long rowCount = rs.getLong(1);
                     
                     // If table is very small, sample all rows
-                    if (rowCount <= samplingConfig.getSampleSize()) {
+                    if (rowCount <= samplerConfig.getSampleSize()) {
                         return (int) rowCount;
                     }
                     
                     // For larger tables, use the configured sample size
                     // A more sophisticated approach could scale this based on distribution
-                    return samplingConfig.getSampleSize();
+                    return samplerConfig.getSampleSize();
                 }
             }
         } catch (SQLException e) {
@@ -202,7 +204,28 @@ public class ParallelSamplerImpl implements DataSampler {
         }
         
         // Default to the configured sample size if we can't determine dynamically
-        return samplingConfig.getSampleSize();
+        return samplerConfig.getSampleSize();
+    }
+
+    @Override
+    public Map<ColumnInfo, SampleData> extractSamples(Connection connection, List<ColumnInfo> columns, com.privsense.core.model.SamplingConfig config) {
+        logger.debug("Extracting samples for {} columns with sample size {}", 
+                columns.size(), config.getSampleSize());
+        
+        // Use the sampleColumns method directly
+        List<SampleData> sampledData = sampleColumns(
+                connection,
+                columns,
+                config.getSampleSize()
+        );
+        
+        // Convert the list of SampleData to the required Map<ColumnInfo, SampleData>
+        Map<ColumnInfo, SampleData> sampleMap = new HashMap<>();
+        for (SampleData sample : sampledData) {
+            sampleMap.put(sample.getColumnInfo(), sample);
+        }
+        
+        return sampleMap;
     }
 
     /**
@@ -210,7 +233,7 @@ public class ParallelSamplerImpl implements DataSampler {
      */
     @PreDestroy
     public void shutdown() {
-        logger.info("Shutting down executor service for ParallelSampler");
+        logger.info("Shutting down executor service for ConsolidatedSampler");
         
         executorService.shutdown();
         try {

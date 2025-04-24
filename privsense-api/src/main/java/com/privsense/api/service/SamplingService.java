@@ -1,6 +1,6 @@
 package com.privsense.api.service;
 
-import com.privsense.api.config.SamplingConfigProperties;
+import com.privsense.core.config.PrivSenseConfigProperties;
 import com.privsense.api.dto.BatchSamplingRequest;
 import com.privsense.api.dto.BatchSamplingResponse;
 import com.privsense.api.dto.SamplingRequest;
@@ -12,7 +12,7 @@ import com.privsense.core.model.SampleData;
 import com.privsense.core.model.SamplingConfig;
 import com.privsense.core.model.TableInfo;
 
-import com.privsense.core.service.DataSampler;
+import com.privsense.core.service.ConsolidatedSampler;
 import com.privsense.core.service.DatabaseConnector;
 import com.privsense.core.service.MetadataExtractor;
 
@@ -36,8 +36,8 @@ import java.util.stream.Collectors;
 public class SamplingService {
 
     private final DatabaseConnector databaseConnector;
-    private final DataSampler dataSampler;
-    private final SamplingConfigProperties samplingConfigProps;
+    private final ConsolidatedSampler sampler;
+    private final PrivSenseConfigProperties configProperties;
     private final DtoMapper dtoMapper;
     private final MetadataExtractor metadataExtractor;
     
@@ -67,20 +67,20 @@ public class SamplingService {
             
             // Apply defaults if not provided in the request
             if (config.getSampleSize() <= 0) {
-                config.setSampleSize(samplingConfigProps.getDefaultSize());
+                config.setSampleSize(configProperties.getSampling().getDefaultSize());
             }
             
             if (config.getSamplingMethod() == null) {
-                config.setSamplingMethod(samplingConfigProps.getMethods().getDefault());
+                config.setSamplingMethod(configProperties.getSampling().getDefaultMethod());
             }
             
             // If entropy calculation wasn't specified in the request, use the default from config
             if (request.getCalculateEntropy() == null) {
-                config.setEntropyCalculationEnabled(samplingConfigProps.isEntropyCalculationEnabled());
+                config.setEntropyCalculationEnabled(configProperties.getSampling().isEntropyCalculationEnabled());
             }
             
             // Perform the sampling
-            SampleData sampleData = dataSampler.sampleColumn(connection, columnInfo, config.getSampleSize());
+            SampleData sampleData = sampler.sampleColumn(connection, columnInfo, config.getSampleSize());
             
             // Capture database product info
             String dbType = connection.getMetaData().getDatabaseProductName();
@@ -124,12 +124,12 @@ public class SamplingService {
      */
     public SamplingResponse.ConfigurationInfo getSamplingConfiguration() {
         return SamplingResponse.ConfigurationInfo.builder()
-            .defaultSampleSize(samplingConfigProps.getDefaultSize())
-            .maxConcurrentQueries(samplingConfigProps.getMaxConcurrentDbQueries())
+            .defaultSampleSize(configProperties.getSampling().getDefaultSize())
+            .maxConcurrentQueries(configProperties.getSampling().getMaxConcurrentDbQueries())
             .availableSamplingMethods(Arrays.stream(SamplingMethod.values())
                 .map(Enum::name)
                 .collect(Collectors.toList()))
-            .defaultSamplingMethod(samplingConfigProps.getMethods().getDefault())
+            .defaultSamplingMethod(configProperties.getSampling().getDefaultMethod())
             .build();
     }
 
@@ -149,15 +149,15 @@ public class SamplingService {
         
         // Apply defaults if not provided in the request
         if (defaultConfig.getSampleSize() <= 0) {
-            defaultConfig.setSampleSize(samplingConfigProps.getDefaultSize());
+            defaultConfig.setSampleSize(configProperties.getSampling().getDefaultSize());
         }
         
         if (defaultConfig.getSamplingMethod() == null) {
-            defaultConfig.setSamplingMethod(samplingConfigProps.getMethods().getDefault());
+            defaultConfig.setSamplingMethod(configProperties.getSampling().getDefaultMethod());
         }
                 
         int maxConcurrentTables = request.getMaxConcurrentTables() != null ?
-                request.getMaxConcurrentTables() : samplingConfigProps.getMaxConcurrentDbQueries();
+                request.getMaxConcurrentTables() : configProperties.getSampling().getMaxConcurrentDbQueries();
         
         List<BatchSamplingResponse.TableSamplingResult> tableResults = new ArrayList<>();
         int totalColumnsProcessed = 0;
@@ -266,7 +266,7 @@ public class SamplingService {
                     columnInfo.setColumnName(columnName);
                     columnInfo.setTable(tableInfo);
                     
-                    SampleData sampleData = dataSampler.sampleColumn(connection, columnInfo, config.getSampleSize());
+                    SampleData sampleData = sampler.sampleColumn(connection, columnInfo, config.getSampleSize());
                     
                     // Use mapper to create the column result
                     BatchSamplingResponse.ColumnSamplingResult columnResult = 

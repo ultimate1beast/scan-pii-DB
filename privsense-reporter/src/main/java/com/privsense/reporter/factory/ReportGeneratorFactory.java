@@ -1,7 +1,7 @@
 package com.privsense.reporter.factory;
 
-import com.privsense.core.service.ComplianceReporter;
-import com.privsense.reporter.ComplianceReporterImpl;
+import com.privsense.core.service.ConsolidatedReportService;
+import com.privsense.reporter.ConsolidatedReportServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -16,10 +16,10 @@ import java.util.Optional;
 @Component
 public class ReportGeneratorFactory {
 
-    private final Map<String, ComplianceReporter> reportGenerators = new HashMap<>();
+    private final Map<String, ConsolidatedReportService> reportGenerators = new HashMap<>();
     
     @Autowired
-    public ReportGeneratorFactory(ComplianceReporterImpl jsonReporter) {
+    public ReportGeneratorFactory(ConsolidatedReportServiceImpl jsonReporter) {
         // Register the available report generators
         reportGenerators.put("json", jsonReporter);
         reportGenerators.put("default", jsonReporter);
@@ -34,7 +34,7 @@ public class ReportGeneratorFactory {
      * @param format The report format (json, pdf, html, etc.)
      * @return The appropriate reporter, or the default reporter if format not supported
      */
-    public ComplianceReporter getReporter(String format) {
+    public ConsolidatedReportService getReporter(String format) {
         return Optional.ofNullable(reportGenerators.get(format.toLowerCase()))
                 .orElseGet(() -> reportGenerators.get("default"));
     }
@@ -45,7 +45,7 @@ public class ReportGeneratorFactory {
      * @param format The format the generator handles
      * @param reporter The reporter implementation
      */
-    public void registerReporter(String format, ComplianceReporter reporter) {
+    public void registerReporter(String format, ConsolidatedReportService reporter) {
         reportGenerators.put(format.toLowerCase(), reporter);
     }
 }

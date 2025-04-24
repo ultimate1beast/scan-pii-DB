@@ -2,6 +2,7 @@ package com.privsense.core.service;
 
 import com.privsense.core.model.ColumnInfo;
 import com.privsense.core.model.SampleData;
+import com.privsense.core.model.SamplingConfig;
 import com.privsense.core.model.SchemaInfo;
 
 import java.sql.Connection;
@@ -9,9 +10,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Defines methods for sampling data from database columns for PII analysis.
+ * Consolidated interface for database column sampling operations.
+ * Combines functionality from both DataSampler and Sampler interfaces.
  */
-public interface DataSampler {
+public interface ConsolidatedSampler {
     
     /**
      * Samples data from a specific column in the database.
@@ -54,4 +56,15 @@ public interface DataSampler {
      * @return The recommended sample size
      */
     int determineOptimalSampleSize(Connection connection, ColumnInfo column);
+    
+    /**
+     * Extracts data samples from a list of columns using the provided connection and sampling configuration.
+     * This method incorporates the configuration-based approach from the original Sampler interface.
+     *
+     * @param connection The database connection to use
+     * @param columns The list of columns to sample data from
+     * @param config The sampling configuration parameters
+     * @return A map of column info to sample data
+     */
+    Map<ColumnInfo, SampleData> extractSamples(Connection connection, List<ColumnInfo> columns, SamplingConfig config);
 }

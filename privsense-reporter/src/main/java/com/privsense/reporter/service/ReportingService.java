@@ -5,15 +5,18 @@ import com.privsense.core.model.ComplianceReport;
 import com.privsense.core.model.DatabaseConnectionInfo;
 import com.privsense.core.model.DetectionResult;
 import com.privsense.core.model.SchemaInfo;
-import com.privsense.core.service.ComplianceReporter;
+import com.privsense.core.service.ConsolidatedReportService;
 import com.privsense.reporter.factory.ReportGeneratorFactory;
-import com.privsense.reporter.model.ScanContext;
+import com.privsense.core.model.ScanContext;
+
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.OutputStream;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -38,31 +41,17 @@ public class ReportingService {
     public ComplianceReport generateReport(ScanContext context) {
         logger.debug("Generating report for scan ID: {}", context.getScanId());
         
-        ComplianceReporter reporter = reportGeneratorFactory.getReporter("json");
+        ConsolidatedReportService reporter = reportGeneratorFactory.getReporter("json");
         
-        // Configure format options if available in the context
+        // Configure format options with database information
         Map<String, Object> formatOptions = Map.of(
-                "samplingConfig", context.getSamplingConfig(),
-                "detectionConfig", context.getDetectionConfig(),
                 "databaseProductName", context.getDatabaseProductName(),
                 "databaseProductVersion", context.getDatabaseProductVersion()
         );
         reporter.configureReportFormat(formatOptions);
         
-        // Generate the report
-        ComplianceReport report = reporter.generateReport(
-                context.getScanId(),
-                context.getConnectionInfo(),
-                context.getSchema(),
-                context.getDetectionResults(),
-                context.getScanStartTime(),
-                context.getScanEndTime()
-        );
-        
-        logger.info("Generated report for scan ID: {} with {} PII findings", 
-                context.getScanId(), report.getPiiFindings().size());
-        
-        return report;
+        // Generate the report using the consolidated service
+        return reporter.generateReport(context);
     }
     
     /**
@@ -92,20 +81,21 @@ public class ReportingService {
             String dbProductName,
             String dbProductVersion) {
         
-        ScanContext context = ScanContext.builder()
+        // Create a core ScanContext directly
+        ScanContext coreContext = ScanContext.builder()
                 .scanId(scanId)
-                .connectionInfo(connectionInfo)
-                .schema(schema)
+                .databaseConnectionInfo(connectionInfo)
+                .schemaInfo(schema)
                 .detectionResults(detectionResults)
-                .samplingConfig(samplingConfig)
-                .detectionConfig(detectionConfig)
-                .scanStartTime(scanStartTime)
-                .scanEndTime(scanEndTime)
+                .samplingConfig(convertToSamplingConfig(samplingConfig))
+                .detectionConfig(convertToDetectionConfig(detectionConfig))
+                .scanStartTime(convertToLocalDateTime(scanStartTime))
+                .scanEndTime(convertToLocalDateTime(scanEndTime))
                 .databaseProductName(dbProductName)
                 .databaseProductVersion(dbProductVersion)
                 .build();
         
-        return generateReport(context);
+        return generateReport(coreContext);
     }
     
     /**
@@ -115,7 +105,7 @@ public class ReportingService {
      * @return A JSON string representation of the report
      */
     public String exportReportToJson(ComplianceReport report) {
-        ComplianceReporter reporter = reportGeneratorFactory.getReporter("json");
+        ConsolidatedReportService reporter = reportGeneratorFactory.getReporter("json");
         return reporter.exportReportToJson(report);
     }
     
@@ -126,8 +116,8 @@ public class ReportingService {
      * @param outputStream The output stream to write to
      */
     public void exportReportToJson(ComplianceReport report, OutputStream outputStream) {
-        ComplianceReporter reporter = reportGeneratorFactory.getReporter("json");
-        reporter.exportReportToJson(report, outputStream);
+        ConsolidatedReportService reporter = reportGeneratorFactory.getReporter("json");
+        reporter.exportReport(report, "json", outputStream);
     }
     
     /**
@@ -139,18 +129,8 @@ public class ReportingService {
      * @throws ReportGenerationException if the format is not supported
      */
     public String exportReport(ComplianceReport report, String format) {
-        ComplianceReporter reporter = reportGeneratorFactory.getReporter(format);
-        
-        switch (format.toLowerCase()) {
-            case "json":
-                return reporter.exportReportToJson(report);
-            case "csv":
-                return reporter.exportReportToCsv(report);
-            case "text":
-                return reporter.exportReportToText(report);
-            default:
-                throw new ReportGenerationException("Unsupported report format: " + format);
-        }
+        ConsolidatedReportService reporter = reportGeneratorFactory.getReporter(format);
+        return reporter.exportReport(report, format);
     }
     
     /**
@@ -162,20 +142,93 @@ public class ReportingService {
      * @throws ReportGenerationException if the format is not supported
      */
     public void exportReport(ComplianceReport report, String format, OutputStream outputStream) {
-        ComplianceReporter reporter = reportGeneratorFactory.getReporter(format);
+        ConsolidatedReportService reporter = reportGeneratorFactory.getReporter(format);
+        reporter.exportReport(report, format, outputStream);
+    }
+    
+    /**
+     * Helper method to convert epoch milliseconds to LocalDateTime
+     */
+    private LocalDateTime convertToLocalDateTime(long epochMillis) {
+        if (epochMillis == 0) return null;
+        return java.time.Instant.ofEpochMilli(epochMillis)
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
+    }
+    
+    /**
+     * Helper method to convert sampling config map to SamplingConfig object
+     */
+    private com.privsense.core.model.SamplingConfig convertToSamplingConfig(Map<String, Object> configMap) {
+        if (configMap == null) return null;
         
-        switch (format.toLowerCase()) {
-            case "json":
-                reporter.exportReportToJson(report, outputStream);
-                break;
-            case "csv":
-                reporter.exportReportToCsv(report, outputStream);
-                break;
-            case "text":
-                reporter.exportReportToText(report, outputStream);
-                break;
-            default:
-                throw new ReportGenerationException("Unsupported report format: " + format);
+        // Use the core model's builder directly
+        com.privsense.core.model.SamplingConfig.SamplingConfigBuilder builder = 
+            com.privsense.core.model.SamplingConfig.builder();
+            
+        // Convert map to SamplingConfig
+        if (configMap.containsKey("sampleSize")) {
+            builder.sampleSize(toInteger(configMap.get("sampleSize")));
+        }
+        if (configMap.containsKey("samplingMethod")) {
+            builder.samplingMethod(configMap.get("samplingMethod").toString());
+        }
+        if (configMap.containsKey("maxConcurrentQueries")) {
+            builder.maxConcurrentQueries(toInteger(configMap.get("maxConcurrentQueries")));
+        }
+        
+        return builder.build();
+    }
+    
+    /**
+     * Helper method to convert detection config map to DetectionConfig object
+     */
+    private com.privsense.core.model.DetectionConfig convertToDetectionConfig(Map<String, Object> configMap) {
+        if (configMap == null) return null;
+        
+        // Use the core model's builder directly
+        com.privsense.core.model.DetectionConfig.DetectionConfigBuilder builder = 
+            com.privsense.core.model.DetectionConfig.builder();
+            
+        // Convert map to DetectionConfig
+        if (configMap.containsKey("heuristicThreshold")) {
+            builder.heuristicThreshold(toDouble(configMap.get("heuristicThreshold")));
+        }
+        if (configMap.containsKey("regexThreshold")) {
+            builder.regexThreshold(toDouble(configMap.get("regexThreshold")));
+        }
+        if (configMap.containsKey("nerThreshold")) {
+            builder.nerThreshold(toDouble(configMap.get("nerThreshold")));
+        }
+        
+        return builder.build();
+    }
+    
+    /**
+     * Helper method to convert object to Integer
+     */
+    private Integer toInteger(Object obj) {
+        if (obj == null) return null;
+        if (obj instanceof Integer) return (Integer) obj;
+        if (obj instanceof Number) return ((Number) obj).intValue();
+        try {
+            return Integer.parseInt(obj.toString());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+    
+    /**
+     * Helper method to convert object to Double
+     */
+    private Double toDouble(Object obj) {
+        if (obj == null) return null;
+        if (obj instanceof Double) return (Double) obj;
+        if (obj instanceof Number) return ((Number) obj).doubleValue();
+        try {
+            return Double.parseDouble(obj.toString());
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 }

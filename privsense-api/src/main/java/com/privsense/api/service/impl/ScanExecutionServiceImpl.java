@@ -1,7 +1,6 @@
 package com.privsense.api.service.impl;
 
-import com.privsense.api.config.DetectionConfigProperties;
-import com.privsense.api.config.SamplingConfigProperties;
+import com.privsense.core.config.PrivSenseConfigProperties;
 import com.privsense.api.dto.ScanRequest;
 import com.privsense.core.exception.DatabaseConnectionException;
 import com.privsense.core.exception.MetadataExtractionException;
@@ -34,12 +33,11 @@ public class ScanExecutionServiceImpl implements ScanExecutionService {
 
     private final DatabaseConnector databaseConnector;
     private final MetadataExtractor metadataExtractor;
-    private final Sampler sampler;
+    private final ConsolidatedSampler sampler;
     private final PiiDetector piiDetector;
-    private final ReportGenerator reportGenerator;
+    private final ConsolidatedReportService reportGenerator;
     private final ConnectionRepository connectionRepository;
-    private final SamplingConfigProperties samplingConfigProps;
-    private final DetectionConfigProperties detectionConfigProps;
+    private final PrivSenseConfigProperties configProperties;
     private final ScanPersistenceService scanPersistenceService;
 
     /**
@@ -127,20 +125,31 @@ public class ScanExecutionServiceImpl implements ScanExecutionService {
                 DatabaseConnectionInfo connectionInfoForReport = connectionRepository.findById(connectionId)
                         .orElseThrow(() -> new IllegalArgumentException("Connection ID not found for report context: " + connectionId));
 
+                // Create scan context with the required data for report generation
+                LocalDateTime scanStartTime = scanInfo.getStartTime() != null ? 
+                    LocalDateTime.ofInstant(scanInfo.getStartTime(), java.time.ZoneId.systemDefault()) : 
+                    LocalDateTime.now();
+                    
+                LocalDateTime scanEndTime = LocalDateTime.now();
+                
                 ScanContext scanContext = ScanContext.builder()
+                        .scanId(jobId)
                         .databaseConnectionInfo(connectionInfoForReport)
                         .schemaInfo(schemaInfo)
                         .sampledData(sampledData)
                         .detectionResults(detectionResults)
                         .samplingConfig(samplingConfig)
                         .detectionConfig(detectionConfig)
-                        .scanStartTime(LocalDateTime.now())
+                        .scanStartTime(scanStartTime)
+                        .scanEndTime(scanEndTime)
+                        .databaseProductName(dbProductName)
+                        .databaseProductVersion(dbProductVersion)
                         .build();
 
                 // Generate the report and store it in the database
                 ComplianceReport report = reportGenerator.generateReport(scanContext);
                 
-                // Store the generated report in the database (assuming we have a method for this)
+                // Store the generated report in the database
                 scanPersistenceService.saveReport(jobId, report);
 
                 // Update scan status to COMPLETED
@@ -197,10 +206,10 @@ public class ScanExecutionServiceImpl implements ScanExecutionService {
     private SamplingConfig buildSamplingConfig(ScanRequest request) {
         return SamplingConfig.builder()
                 .sampleSize(request.getSampleSize() != null ?
-                        request.getSampleSize() : samplingConfigProps.getDefaultSize())
+                        request.getSampleSize() : configProperties.getSampling().getDefaultSize())
                 .samplingMethod(request.getSamplingMethod() != null ?
-                        request.getSamplingMethod() : samplingConfigProps.getMethods().getDefault())
-                .maxConcurrentQueries(samplingConfigProps.getMaxConcurrentDbQueries())
+                        request.getSamplingMethod() : configProperties.getSampling().getDefaultMethod())
+                .maxConcurrentQueries(configProperties.getSampling().getMaxConcurrentDbQueries())
                 .build();
     }
 
@@ -210,15 +219,15 @@ public class ScanExecutionServiceImpl implements ScanExecutionService {
     private DetectionConfig buildDetectionConfig(ScanRequest request) {
         return DetectionConfig.builder()
                 .heuristicThreshold(request.getHeuristicThreshold() != null ?
-                        request.getHeuristicThreshold() : detectionConfigProps.getThresholds().getHeuristic())
+                        request.getHeuristicThreshold() : configProperties.getDetection().getHeuristicThreshold())
                 .regexThreshold(request.getRegexThreshold() != null ?
-                        request.getRegexThreshold() : detectionConfigProps.getThresholds().getRegex())
+                        request.getRegexThreshold() : configProperties.getDetection().getRegexThreshold())
                 .nerThreshold(request.getNerThreshold() != null ?
-                        request.getNerThreshold() : detectionConfigProps.getThresholds().getNer())
-                .reportingThreshold(detectionConfigProps.getThresholds().getReporting())
-                .stopPipelineOnHighConfidence(detectionConfigProps.isStopPipelineOnHighConfidence())
+                        request.getNerThreshold() : configProperties.getDetection().getNerThreshold())
+                .reportingThreshold(configProperties.getDetection().getReportingThreshold())
+                .stopPipelineOnHighConfidence(configProperties.getDetection().isStopPipelineOnHighConfidence())
                 .entropyCalculationEnabled(request.getEntropyCalculationEnabled() != null ? 
-                        request.getEntropyCalculationEnabled() : detectionConfigProps.isEntropyEnabled())
+                        request.getEntropyCalculationEnabled() : configProperties.getDetection().isEntropyEnabled())
                 .build();
     }
 }
