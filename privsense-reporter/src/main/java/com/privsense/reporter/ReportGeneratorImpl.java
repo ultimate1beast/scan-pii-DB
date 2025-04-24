@@ -24,7 +24,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class JsonReportGeneratorImpl implements ReportGenerator {
+public class ReportGeneratorImpl implements ReportGenerator {
 
     private final ComplianceReporter complianceReporter;
 

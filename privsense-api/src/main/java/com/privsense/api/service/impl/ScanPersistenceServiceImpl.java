@@ -1,17 +1,9 @@
 package com.privsense.api.service.impl;
 
 import com.privsense.core.model.*;
-import com.privsense.core.repository.ColumnInfoRepository;
-import com.privsense.core.repository.DetectionResultRepository;
-import com.privsense.core.repository.PiiCandidateRepository;
-import com.privsense.core.repository.RelationshipInfoRepository;
-import com.privsense.core.repository.ScanMetadataRepository;
-import com.privsense.core.repository.TableInfoRepository;
-import com.privsense.core.repository.SchemaInfoRepository;
+import com.privsense.core.repository.*;
 import com.privsense.core.service.ScanPersistenceService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,34 +18,41 @@ import java.util.UUID;
  * Service implementation for persisting and retrieving scan results.
  */
 @Service
+@Slf4j
 public class ScanPersistenceServiceImpl implements ScanPersistenceService {
-
-    private static final Logger logger = LoggerFactory.getLogger(ScanPersistenceServiceImpl.class);
 
     private final ScanMetadataRepository scanRepository;
     private final DetectionResultRepository detectionResultRepository;
-    private final PiiCandidateRepository piiCandidateRepository;
     private final ColumnInfoRepository columnInfoRepository;
     private final TableInfoRepository tableInfoRepository;
     private final RelationshipInfoRepository relationshipInfoRepository;
     private final SchemaInfoRepository schemaInfoRepository;
+    private final EntityRelationshipManager entityRelationshipManager;
+    private final ComplianceReportRepository complianceReportRepository;
 
-    @Autowired
     public ScanPersistenceServiceImpl(
             ScanMetadataRepository scanRepository,
             DetectionResultRepository detectionResultRepository,
-            PiiCandidateRepository piiCandidateRepository,
             ColumnInfoRepository columnInfoRepository,
             TableInfoRepository tableInfoRepository,
             RelationshipInfoRepository relationshipInfoRepository,
-            SchemaInfoRepository schemaInfoRepository) {
+            SchemaInfoRepository schemaInfoRepository,
+            EntityRelationshipManager entityRelationshipManager,
+            ComplianceReportRepository complianceReportRepository) {
         this.scanRepository = scanRepository;
         this.detectionResultRepository = detectionResultRepository;
-        this.piiCandidateRepository = piiCandidateRepository;
         this.columnInfoRepository = columnInfoRepository;
         this.tableInfoRepository = tableInfoRepository;
         this.relationshipInfoRepository = relationshipInfoRepository;
         this.schemaInfoRepository = schemaInfoRepository;
+        this.entityRelationshipManager = entityRelationshipManager;
+        this.complianceReportRepository = complianceReportRepository;
+    }
+
+    @Override
+    @Transactional
+    public ScanMetadata save(ScanMetadata scanMetadata) {
+        return scanRepository.save(scanMetadata);
     }
 
     @Override
@@ -68,7 +67,7 @@ public class ScanPersistenceServiceImpl implements ScanPersistenceService {
         scan.setDatabaseProductVersion(databaseProductVersion);
         
         ScanMetadata savedScan = scanRepository.save(scan);
-        logger.info("Created new scan with ID: {}", savedScan.getId());
+        log.info("Created new scan with ID: {}", savedScan.getId());
         
         return savedScan;
     }
@@ -79,7 +78,7 @@ public class ScanPersistenceServiceImpl implements ScanPersistenceService {
         scanRepository.findById(scanId).ifPresent(scan -> {
             scan.setStatus(status);
             scanRepository.save(scan);
-            logger.debug("Updated scan status for scan ID {}: {}", scanId, status);
+            log.debug("Updated scan status for scan ID {}: {}", scanId, status);
         });
     }
 
@@ -93,94 +92,18 @@ public class ScanPersistenceServiceImpl implements ScanPersistenceService {
                     .filter(DetectionResult::hasPii)
                     .count());
             
-            // First, collect all entities needed for proper saving
+            // Extract relationships between entities
             Set<SchemaInfo> schemaInfos = new HashSet<>();
             Set<TableInfo> tableInfos = new HashSet<>();
             Set<ColumnInfo> columnInfos = new HashSet<>();
             Set<RelationshipInfo> relationshipInfos = new HashSet<>();
             
-            for (DetectionResult result : results) {
-                ColumnInfo column = result.getColumnInfo();
-                columnInfos.add(column);
+            // Extract all related entities using the relationship manager
+            entityRelationshipManager.extractRelatedEntities(
+                results, scanId, schemaInfos, tableInfos, columnInfos, relationshipInfos);
                 
-                // Add the table of this column
-                if (column.getTable() != null) {
-                    TableInfo table = column.getTable();
-                    tableInfos.add(table);
-                    
-                    // Add schema if present
-                    if (table.getSchema() != null) {
-                        table.getSchema().setScanId(scanId);
-                        schemaInfos.add(table.getSchema());
-                    }
-                    
-                    // Add relationships if present
-                    if (table.getAllRelationships() != null) {
-                        for (RelationshipInfo relationship : table.getAllRelationships()) {
-                            relationshipInfos.add(relationship);
-                            
-                            // Also add all columns referenced by the relationship
-                            if (relationship.getSourceColumn() != null) {
-                                columnInfos.add(relationship.getSourceColumn());
-                                if (relationship.getSourceColumn().getTable() != null) {
-                                    tableInfos.add(relationship.getSourceColumn().getTable());
-                                }
-                            }
-                            if (relationship.getTargetColumn() != null) {
-                                columnInfos.add(relationship.getTargetColumn());
-                                if (relationship.getTargetColumn().getTable() != null) {
-                                    tableInfos.add(relationship.getTargetColumn().getTable());
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                // Also collect ColumnInfo from PiiCandidate objects and their tables
-                if (result.getCandidates() != null) {
-                    for (PiiCandidate candidate : result.getCandidates()) {
-                        ColumnInfo candidateColumn = candidate.getColumnInfo();
-                        columnInfos.add(candidateColumn);
-                        
-                        // Add the table of this candidate's column
-                        if (candidateColumn.getTable() != null) {
-                            TableInfo table = candidateColumn.getTable();
-                            tableInfos.add(table);
-                            
-                            // Add schema if present
-                            if (table.getSchema() != null) {
-                                table.getSchema().setScanId(scanId);
-                                schemaInfos.add(table.getSchema());
-                            }
-                        }
-                    }
-                }
-            }
-            
-            // First, save all SchemaInfo objects
-            if (!schemaInfos.isEmpty()) {
-                logger.debug("Saving {} schema info objects for scan ID {}", schemaInfos.size(), scanId);
-                for (SchemaInfo schema : schemaInfos) {
-                    if (schema.getId() == null) { // Only save if it's a new schema
-                        schemaInfoRepository.save(schema);
-                    }
-                }
-                schemaInfoRepository.flush(); // Ensure schemas are saved to the database
-            }
-            
-            // Save all TableInfo objects next, now that their schemas are saved
-            tableInfoRepository.saveAll(tableInfos);
-            logger.debug("Saved {} table info objects for scan ID {}", tableInfos.size(), scanId);
-            
-            // Save all ColumnInfo objects next, now that their tables are saved
-            columnInfoRepository.saveAll(columnInfos);
-            logger.debug("Saved {} column info objects for scan ID {}", columnInfos.size(), scanId);
-            
-            // Save all RelationshipInfo objects now that columns and tables are saved
-            if (!relationshipInfos.isEmpty()) {
-                relationshipInfoRepository.saveAll(relationshipInfos);
-                logger.debug("Saved {} relationship info objects for scan ID {}", relationshipInfos.size(), scanId);
-            }
+            // Save all entities in the correct order to maintain referential integrity
+            saveEntities(schemaInfos, tableInfos, columnInfos, relationshipInfos);
             
             // Link detection results to the scan
             for (DetectionResult result : results) {
@@ -190,9 +113,57 @@ public class ScanPersistenceServiceImpl implements ScanPersistenceService {
             
             // Save everything
             scanRepository.save(scan);
-            logger.info("Saved scan results for scan ID {}: {} columns scanned, {} PII columns found", 
+            log.info("Saved scan results for scan ID {}: {} columns scanned, {} PII columns found", 
                     scanId, results.size(), scan.getTotalPiiColumnsFound());
         });
+    }
+
+    @Override
+    @Transactional
+    public void saveReport(UUID scanId, ComplianceReport report) {
+        scanRepository.findById(scanId).ifPresent(scan -> {
+            // Set the scan reference in the report
+            report.setScanId(scanId);
+            
+            // Save the report
+            complianceReportRepository.save(report);
+            log.info("Saved compliance report for scan ID: {}", scanId);
+        });
+    }
+
+    /**
+     * Saves entities in order to maintain referential integrity.
+     */
+    private void saveEntities(
+            Set<SchemaInfo> schemaInfos,
+            Set<TableInfo> tableInfos, 
+            Set<ColumnInfo> columnInfos, 
+            Set<RelationshipInfo> relationshipInfos) {
+            
+        // First, save all SchemaInfo objects
+        if (!schemaInfos.isEmpty()) {
+            log.debug("Saving {} schema info objects", schemaInfos.size());
+            for (SchemaInfo schema : schemaInfos) {
+                if (schema.getId() == null) { // Only save if it's a new schema
+                    schemaInfoRepository.save(schema);
+                }
+            }
+            schemaInfoRepository.flush(); // Ensure schemas are saved to the database
+        }
+        
+        // Save all TableInfo objects next, now that their schemas are saved
+        tableInfoRepository.saveAll(tableInfos);
+        log.debug("Saved {} table info objects", tableInfos.size());
+        
+        // Save all ColumnInfo objects next, now that their tables are saved
+        columnInfoRepository.saveAll(columnInfos);
+        log.debug("Saved {} column info objects", columnInfos.size());
+        
+        // Save all RelationshipInfo objects now that columns and tables are saved
+        if (!relationshipInfos.isEmpty()) {
+            relationshipInfoRepository.saveAll(relationshipInfos);
+            log.debug("Saved {} relationship info objects", relationshipInfos.size());
+        }
     }
 
     @Override
@@ -202,7 +173,7 @@ public class ScanPersistenceServiceImpl implements ScanPersistenceService {
             scan.setEndTime(Instant.now());
             scan.setStatus(ScanMetadata.ScanStatus.COMPLETED);
             scanRepository.save(scan);
-            logger.info("Completed scan ID: {}", scanId);
+            log.info("Completed scan ID: {}", scanId);
         });
     }
 
@@ -214,7 +185,7 @@ public class ScanPersistenceServiceImpl implements ScanPersistenceService {
             scan.setStatus(ScanMetadata.ScanStatus.FAILED);
             scan.setErrorMessage(errorMessage);
             scanRepository.save(scan);
-            logger.error("Scan ID {} failed: {}", scanId, errorMessage);
+            log.error("Scan ID {} failed: {}", scanId, errorMessage);
         });
     }
 

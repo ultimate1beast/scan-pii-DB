@@ -39,13 +39,13 @@ public class NerClientStrategy implements PiiDetectionStrategy {
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
     
-    @Value("${privsense.ner.service.url:http://localhost:8000/detect-pii}")
+    @Value("${privsense.ner.service.url:http://localhost:5000/detect-pii}")
     private String nerServiceUrl;
     
     @Value("${privsense.ner.service.timeout:5000}")
     private int requestTimeoutMs;
     
-    @Value("${privsense.ner.service.max-samples:100}")
+    @Value("${privsense.ner.service.max-samples:10}")
     private int maxSamples;
     
     @Value("${privsense.ner.service.retry-attempts:2}")

@@ -21,6 +21,7 @@ public class ReportMixinModule extends SimpleModule {
         setMixInAnnotation(TableInfo.class, TableInfoMixin.class);
         setMixInAnnotation(ColumnInfo.class, ColumnInfoMixin.class);
         setMixInAnnotation(RelationshipInfo.class, RelationshipInfoMixin.class);
+        setMixInAnnotation(ComplianceReport.class, ComplianceReportMixin.class);
     }
     
     /**
@@ -49,6 +50,13 @@ public class ReportMixinModule extends SimpleModule {
      * Mixin abstract class for RelationshipInfo to control serialization
      */
     public abstract static class RelationshipInfoMixin {
+        // Leave empty - this is just a marker class for Jackson
+    }
+    
+    /**
+     * Mixin abstract class for ComplianceReport to control serialization
+     */
+    public abstract static class ComplianceReportMixin {
         // Leave empty - this is just a marker class for Jackson
     }
 }

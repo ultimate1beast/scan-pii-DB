@@ -1,5 +1,6 @@
 package com.privsense.core.service;
 
+import com.privsense.core.model.ComplianceReport;
 import com.privsense.core.model.DetectionResult;
 import com.privsense.core.model.ScanMetadata;
 
@@ -8,89 +9,107 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Service interface for persisting and retrieving scan results.
+ * Service for persisting and retrieving scan data.
+ * Follows the Repository pattern to provide a clean separation between the domain model layer
+ * and the data mapping layer.
  */
 public interface ScanPersistenceService {
-
+    
     /**
-     * Create a new scan record
+     * Creates a new scan record.
      *
-     * @param connectionId The connection ID used for the scan
+     * @param connectionId The ID of the database connection
      * @param databaseName The name of the database being scanned
-     * @param databaseProductName The database product name (e.g., PostgreSQL, MySQL)
+     * @param databaseProductName The database product name
      * @param databaseProductVersion The database product version
-     * @return The created scan metadata entity
+     * @return The created ScanMetadata
      */
     ScanMetadata createScan(UUID connectionId, String databaseName, String databaseProductName, String databaseProductVersion);
-
+    
     /**
-     * Update the status of a scan
+     * Updates the status of a scan.
      *
-     * @param scanId The scan ID
+     * @param scanId The ID of the scan
      * @param status The new status
      */
     void updateScanStatus(UUID scanId, ScanMetadata.ScanStatus status);
-
+    
     /**
-     * Save scan results (detection results and PII candidates)
+     * Saves scan results to the database.
      *
-     * @param scanId The scan ID
+     * @param scanId The ID of the scan
      * @param results The detection results to save
      */
     void saveScanResults(UUID scanId, List<DetectionResult> results);
-
+    
     /**
-     * Mark a scan as completed
+     * Marks a scan as completed.
      *
-     * @param scanId The scan ID
+     * @param scanId The ID of the scan
      */
     void completeScan(UUID scanId);
-
+    
     /**
-     * Mark a scan as failed with an error message
+     * Marks a scan as failed with an error message.
      *
-     * @param scanId The scan ID
+     * @param scanId The ID of the scan
      * @param errorMessage The error message
      */
     void failScan(UUID scanId, String errorMessage);
-
+    
     /**
-     * Get scan metadata by ID
+     * Gets a scan by its ID.
      *
-     * @param scanId The scan ID
-     * @return Optional containing the scan metadata if found
+     * @param scanId The ID of the scan
+     * @return An Optional containing the scan if found
      */
     Optional<ScanMetadata> getScanById(UUID scanId);
-
+    
     /**
-     * Get all scans for a specific connection
+     * Gets all scans for a connection.
      *
-     * @param connectionId The connection ID
-     * @return List of scan metadata entities
+     * @param connectionId The ID of the connection
+     * @return A list of scans for the connection
      */
     List<ScanMetadata> getScansByConnectionId(UUID connectionId);
-
+    
     /**
-     * Get all scans with a specific status
+     * Gets all scans with a specific status.
      *
-     * @param status The scan status
-     * @return List of scan metadata entities
+     * @param status The status to filter by
+     * @return A list of scans with the given status
      */
     List<ScanMetadata> getScansByStatus(ScanMetadata.ScanStatus status);
-
+    
     /**
-     * Get all detection results for a specific scan
+     * Gets all detection results for a scan.
      *
-     * @param scanId The scan ID
-     * @return List of detection result entities
+     * @param scanId The ID of the scan
+     * @return A list of detection results
      */
     List<DetectionResult> getDetectionResultsByScanId(UUID scanId);
-
+    
     /**
-     * Get only PII detection results for a specific scan
+     * Gets only PII detection results for a scan.
      *
-     * @param scanId The scan ID
-     * @return List of detection result entities with PII findings
+     * @param scanId The ID of the scan
+     * @return A list of PII detection results
      */
     List<DetectionResult> getPiiResultsByScanId(UUID scanId);
+    
+    /**
+     * Saves or updates a scan metadata record.
+     *
+     * @param scanMetadata The scan metadata to save
+     * @return The saved scan metadata
+     */
+    ScanMetadata save(ScanMetadata scanMetadata);
+    
+    /**
+     * Saves a compliance report for a scan.
+     *
+     * @param scanId The ID of the scan
+     * @param report The compliance report to save
+     */
+    void saveReport(UUID scanId, ComplianceReport report);
 }

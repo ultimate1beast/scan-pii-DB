@@ -1,0 +1,8 @@
+fastapi>=0.95.0
+uvicorn>=0.21.0
+pydantic>=2.0.0
+gliner>=1.0.0
+torch>=2.0.0
+transformers>=4.30.0
+huggingface-hub>=0.16.0
+python-multipart>=0.0.6

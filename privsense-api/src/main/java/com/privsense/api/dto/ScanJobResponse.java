@@ -32,6 +32,10 @@ public class ScanJobResponse {
      * @return true if the job status is "COMPLETED", false otherwise
      */
     public boolean isCompleted() {
-        return "COMPLETED".equals(status);
+        if (status == null) {
+            return false;
+        }
+        // Check for both "COMPLETED" exact match and case-insensitive contains check
+        return "COMPLETED".equals(status) || status.toUpperCase().contains("COMPLETED");
     }
 }

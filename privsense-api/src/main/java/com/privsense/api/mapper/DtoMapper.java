@@ -8,18 +8,24 @@ import com.privsense.api.dto.SamplingRequest;
 import com.privsense.api.dto.SamplingResponse;
 import com.privsense.api.dto.ScanJobResponse;
 import com.privsense.api.dto.ScanRequest;
-import com.privsense.api.service.ScanOrchestrationService;
-import com.privsense.api.service.ScanOrchestrationService.JobStatus;
+
+import com.privsense.api.service.impl.ScanJobManagementServiceImpl.JobStatus;
 import com.privsense.core.model.ColumnInfo;
 import com.privsense.core.model.DatabaseConnectionInfo;
 import com.privsense.core.model.DetectionConfig;
 import com.privsense.core.model.SampleData;
 import com.privsense.core.model.SamplingConfig;
+import com.privsense.core.model.ScanMetadata;
+
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.mapstruct.ReportingPolicy;
 import org.mapstruct.factory.Mappers;
+
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 /**
  * Interface for mapping between DTOs and domain models using MapStruct.
@@ -67,33 +73,73 @@ public interface DtoMapper {
     DetectionConfig toDetectionConfig(ScanRequest request);
     
     /**
-     * Maps JobStatus to ScanJobResponse DTO.
+     * Maps ScanJobResponse to ScanJobResponse DTO (direct transfer).
      */
-    @Mapping(source = "state", target = "currentOperation", qualifiedByName = "stateToOperation")
+    @Mapping(target = "currentOperation", qualifiedByName = "stateToOperation")
+    ScanJobResponse toDto(ScanJobResponse jobStatus);
+    
+    /**
+     * Maps ScanMetadata to ScanJobResponse.
+     */
+    @Mapping(source = "id", target = "jobId")
+    @Mapping(source = "status", target = "status", qualifiedByName = "scanStatusToString")
+    @Mapping(source = "status", target = "currentOperation", qualifiedByName = "scanStatusToOperation")
+    @Mapping(source = "startTime", target = "startTime", qualifiedByName = "instantToLocalDateTime")
+    @Mapping(source = "endTime", target = "lastUpdateTime", qualifiedByName = "instantToLocalDateTime")
+    @Mapping(source = "errorMessage", target = "errorMessage")
+    ScanJobResponse fromScanMetadata(ScanMetadata scanMetadata);
+    
+    /**
+     * Maps JobStatus to ScanJobResponse.
+     */
     @Mapping(source = "jobId", target = "jobId")
     @Mapping(source = "connectionId", target = "connectionId")
-    @Mapping(expression = "java(jobStatus.getState().toString())", target = "status")
+    @Mapping(expression = "java(status.getState().name())", target = "status")
+    @Mapping(expression = "java(stateToOperation(status.getState().name()))", target = "currentOperation")
     @Mapping(source = "startTime", target = "startTime")
     @Mapping(source = "lastUpdateTime", target = "lastUpdateTime")
     @Mapping(source = "errorMessage", target = "errorMessage")
-    @Mapping(target = "progress", ignore = true)
-    ScanJobResponse toDto(JobStatus jobStatus);
+    ScanJobResponse fromJobStatus(JobStatus status);
     
     /**
-     * Converts JobState to a human-readable operation description.
+     * Converts Instant to LocalDateTime.
+     */
+    @Named("instantToLocalDateTime")
+    default LocalDateTime instantToLocalDateTime(Instant instant) {
+        return instant != null ? LocalDateTime.ofInstant(instant, ZoneId.systemDefault()) : null;
+    }
+    
+    /**
+     * Converts ScanMetadata.ScanStatus to string.
+     */
+    @Named("scanStatusToString")
+    default String scanStatusToString(ScanMetadata.ScanStatus status) {
+        return status != null ? status.name() : null;
+    }
+    
+    /**
+     * Converts ScanMetadata.ScanStatus to operation description.
+     */
+    @Named("scanStatusToOperation")
+    default String scanStatusToOperation(ScanMetadata.ScanStatus status) {
+        return status != null ? stateToOperation(status.name()) : null;
+    }
+    
+    /**
+     * Converts ScanMetadata.ScanStatus to a human-readable operation description.
      */
     @Named("stateToOperation")
-    default String stateToOperation(ScanOrchestrationService.JobState state) {
+    default String stateToOperation(String state) {
         if (state == null) return "Unknown";
         
         switch (state) {
-            case PENDING: return "Waiting to start";
-            case EXTRACTING_METADATA: return "Extracting database metadata";
-            case SAMPLING: return "Sampling data from columns";
-            case DETECTING_PII: return "Analyzing data for PII";
-            case GENERATING_REPORT: return "Generating compliance report";
-            case COMPLETED: return "Scan completed";
-            case FAILED: return "Scan failed";
+            case "PENDING": return "Waiting to start";
+            case "EXTRACTING_METADATA": return "Extracting database metadata";
+            case "SAMPLING": return "Sampling data from columns";
+            case "DETECTING_PII": return "Analyzing data for PII";
+            case "GENERATING_REPORT": return "Generating compliance report";
+            case "COMPLETED": return "Scan completed";
+            case "FAILED": return "Scan failed";
             default: return "Unknown";
         }
     }

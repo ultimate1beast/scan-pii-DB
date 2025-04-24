@@ -1,7 +1,7 @@
 package com.privsense.reporter.factory;
 
 import com.privsense.core.service.ComplianceReporter;
-import com.privsense.reporter.JsonComplianceReporterImpl;
+import com.privsense.reporter.ComplianceReporterImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -19,7 +19,7 @@ public class ReportGeneratorFactory {
     private final Map<String, ComplianceReporter> reportGenerators = new HashMap<>();
     
     @Autowired
-    public ReportGeneratorFactory(JsonComplianceReporterImpl jsonReporter) {
+    public ReportGeneratorFactory(ComplianceReporterImpl jsonReporter) {
         // Register the available report generators
         reportGenerators.put("json", jsonReporter);
         reportGenerators.put("default", jsonReporter);

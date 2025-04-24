@@ -1,0 +1,43 @@
+# Environnement virtuel
+venv/
+env/
+.env/
+
+# Cache Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Fichiers de modèles (volumineux)
+models/
+*.bin
+*.model
+*.pt
+*.safetensors
+
+# Logs et données temporaires
+logs/
+*.log
+temp/
+tmp/
+
+# Fichiers spécifiques à l'IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Fichiers du système d'exploitation
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,10 +1,10 @@
-package com.privsense.api.repository;
+package com.privsense.api.repository.impl;
 
 import com.privsense.api.repository.jpa.SchemaInfoJpaRepository;
 import com.privsense.core.model.SchemaInfo;
 import com.privsense.core.repository.SchemaInfoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
 import java.util.List;
@@ -12,15 +12,15 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Implementation of SchemaInfoRepository that delegates to JPA.
+ * Implementation of SchemaInfoRepository using JPA.
  */
-@Component
-public class JpaSchemaInfoRepository implements SchemaInfoRepository {
+@Repository
+public class SchemaInfoRepositoryImpl implements SchemaInfoRepository {
 
     private final SchemaInfoJpaRepository jpaRepository;
 
     @Autowired
-    public JpaSchemaInfoRepository(SchemaInfoJpaRepository jpaRepository) {
+    public SchemaInfoRepositoryImpl(SchemaInfoJpaRepository jpaRepository) {
         this.jpaRepository = jpaRepository;
     }
 

@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,13 +28,13 @@ import java.util.stream.Collectors;
  * This is the primary implementation used for standard report generation.
  */
 @Service
-public class JsonComplianceReporterImpl implements ComplianceReporter {
+public class ComplianceReporterImpl implements ComplianceReporter {
 
-    private static final Logger logger = LoggerFactory.getLogger(JsonComplianceReporterImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(ComplianceReporterImpl.class);
     private final ObjectMapper objectMapper;
     private Map<String, Object> formatOptions = new HashMap<>();
 
-    public JsonComplianceReporterImpl() {
+    public ComplianceReporterImpl() {
         this.objectMapper = new ObjectMapper();
         this.objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
         this.objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
@@ -90,10 +91,24 @@ public class JsonComplianceReporterImpl implements ComplianceReporter {
                 }
             }
         }
+
+        // Calculate scan duration in milliseconds
+        long scanDurationMillis = scanEndTime - scanStartTime;
+        
+        // Create the embedded summary object
+        ComplianceReport.ScanSummary summary = ComplianceReport.ScanSummary.builder()
+                .tablesScanned(countTablesScanned(schema))
+                .columnsScanned(detectionResults.size())
+                .piiColumnsFound(piiFindings.size())
+                .totalPiiCandidates(calculateTotalPiiCandidates(piiFindings))
+                .scanDurationMillis(scanDurationMillis)
+                .build();
         
         // Build the report
         ComplianceReport report = ComplianceReport.builder()
                 .scanId(scanId)
+                .reportId(UUID.randomUUID().toString()) // Generate a unique report ID
+                .generatedAt(LocalDateTime.now())
                 .scanStartTime(Instant.ofEpochMilli(scanStartTime))
                 .scanEndTime(Instant.ofEpochMilli(scanEndTime))
                 .scanDuration(Duration.between(
@@ -105,16 +120,36 @@ public class JsonComplianceReporterImpl implements ComplianceReporter {
                 .databaseProductVersion(formatOptions.getOrDefault("databaseProductVersion", "Unknown").toString())
                 .samplingConfig(samplingConfig)
                 .detectionConfig(detectionConfig)
+                // Set both the direct fields and the embedded summary to ensure consistency
                 .totalTablesScanned(countTablesScanned(schema))
                 .totalColumnsScanned(detectionResults.size())
                 .totalPiiColumnsFound(piiFindings.size())
-                .piiFindings(piiFindings)
+                .summary(summary)
+                .detectionResults(detectionResults)
                 .build();
+        
+        // Establish bidirectional relationship between report and detection results
+        for (DetectionResult result : detectionResults) {
+            result.setReport(report);
+        }
         
         logger.info("Generated compliance report for scan ID: {} with {} PII findings", 
                 scanId, piiFindings.size());
         
         return report;
+    }
+
+    /**
+     * Calculate the total number of PII candidates across all findings
+     */
+    private int calculateTotalPiiCandidates(List<DetectionResult> piiFindings) {
+        int total = 0;
+        for (DetectionResult result : piiFindings) {
+            if (result.getCandidates() != null) {
+                total += result.getCandidates().size();
+            }
+        }
+        return total;
     }
 
     @Override

@@ -1,8 +1,7 @@
 package com.privsense.core.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +26,11 @@ public class DetectionResult {
     @JoinColumn(name = "column_id")
     private ColumnInfo columnInfo;
     
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "report_scan_id")
+    @JsonBackReference
+    private ComplianceReport report;
+    
     @OneToMany(mappedBy = "detectionResult", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PiiCandidate> candidates;
     
@@ -36,7 +40,7 @@ public class DetectionResult {
     @Column(name = "highest_confidence_score")
     private double highestConfidenceScore;
     
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "detection_methods", joinColumns = @JoinColumn(name = "result_id"))
     @Column(name = "method_name")
     private List<String> detectionMethods;
@@ -73,6 +77,14 @@ public class DetectionResult {
 
     public void setColumnInfo(ColumnInfo columnInfo) {
         this.columnInfo = columnInfo;
+    }
+
+    public ComplianceReport getReport() {
+        return report;
+    }
+    
+    public void setReport(ComplianceReport report) {
+        this.report = report;
     }
 
     public List<PiiCandidate> getCandidates() {

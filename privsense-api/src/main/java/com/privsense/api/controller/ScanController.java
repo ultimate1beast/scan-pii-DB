@@ -6,13 +6,13 @@ import com.privsense.api.dto.ComplianceReportDTO;
 import com.privsense.api.exception.ConflictException;
 import com.privsense.api.exception.ResourceNotFoundException;
 import com.privsense.api.service.ScanOrchestrationService;
-import com.privsense.core.model.ComplianceReport;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +26,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/scans")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "PII Scans", description = "APIs for managing database PII scans")
 public class ScanController {
 
@@ -65,6 +66,8 @@ public class ScanController {
         try {
             // Using straight service method that returns DTO
             ScanJobResponse response = scanService.getJobStatus(jobId);
+            log.debug("Scan status for job {}: status={}, completed={}", 
+                    jobId, response.getStatus(), response.isCompleted());
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             throw new ResourceNotFoundException("Scan job not found: " + jobId);
@@ -91,7 +94,12 @@ public class ScanController {
         // Check if the scan exists and is completed
         try {
             ScanJobResponse jobStatus = scanService.getJobStatus(jobId);
+            log.debug("Report request for job {}: status={}, completed={}", 
+                    jobId, jobStatus.getStatus(), jobStatus.isCompleted());
+            
             if (!jobStatus.isCompleted()) {
+                log.warn("Report requested for incomplete scan {}, status is {}", 
+                        jobId, jobStatus.getStatus());
                 throw new ConflictException("Scan report not available: scan is not completed yet");
             }
         } catch (IllegalArgumentException e) {
@@ -115,6 +123,8 @@ public class ScanController {
                 requestedFormat = "csv";
             }
         }
+        
+        log.debug("Processing report request for job {} in format {}", jobId, requestedFormat);
         
         // Handle each format type
         switch (requestedFormat) {

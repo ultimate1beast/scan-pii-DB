@@ -41,7 +41,7 @@ privsense:
     thread-name-prefix: privsense-async-
   
   sampling:
-    default-size: 1000
+    default-size: 10
     max-concurrent-db-queries: 5
     entropy-calculation-enabled: true
     methods:
@@ -57,7 +57,7 @@ privsense:
   
   ner:
     service:
-      url: http://localhost:8000/detect-pii
+      url: http://localhost:5000/detect-pii
       timeout-seconds: 30
       circuit-breaker:
         enabled: true

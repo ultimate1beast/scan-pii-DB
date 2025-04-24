@@ -45,6 +45,7 @@ public class ComplianceReportDTO {
     private Map<String, Object> detectionConfig;
     
     // PII findings
+    @Builder.Default
     private List<PiiColumnDTO> piiFindings = new ArrayList<>();
     
     /**
