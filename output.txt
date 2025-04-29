@@ -1,0 +1,912 @@
+what do u think about this ouptut :
+Curl
+
+curl -X 'GET' \
+  'http://localhost:8080/privsense/api/v1/scans/97cd10d3-e324-4588-8bc5-8a6e9f7afb85/report?format=json' \
+  -H 'accept: application/json'
+Request URL
+http://localhost:8080/privsense/api/v1/scans/97cd10d3-e324-4588-8bc5-8a6e9f7afb85/report?format=json
+Server response
+Code	Details
+200	
+Response body
+Download
+{
+  "status": "SUCCESS",
+  "scanId": "97cd10d3-e324-4588-8bc5-8a6e9f7afb85",
+  "reportId": "18446126-52f0-4481-ac40-a28ba3d9dfbf",
+  "databaseHost": "localhost",
+  "databaseName": "test_schema",
+  "databaseProductName": "MySQL",
+  "databaseProductVersion": "8.0.11",
+  "totalTablesScanned": 5,
+  "totalColumnsScanned": 53,
+  "totalPiiColumnsFound": 24,
+  "totalQuasiIdentifierColumnsFound": 0,
+  "scanStartTime": "2025-04-29T10:28:13.340Z",
+  "scanEndTime": "2025-04-29T10:28:41.250Z",
+  "samplingConfig": {
+    "sampleSize": 10,
+    "samplingMethod": "RANDOM",
+    "maxConcurrentQueries": 5
+  },
+  "detectionConfig": {
+    "nerThreshold": 0.3,
+    "regexThreshold": 0.8,
+    "quasiIdentifier": {
+      "enabled": true,
+      "confidenceThreshold": 0.5,
+      "maxDistinctValueRatio": 0.8,
+      "minDistinctValueCount": 3,
+      "commonQuasiIdentifiers": [
+        "zip",
+        "postal_code",
+        "city",
+        "state",
+        "province",
+        "country",
+        "region",
+        "gender",
+        "sex",
+        "race",
+        "ethnicity",
+        "ethnic",
+        "age",
+        "birth_year",
+        "year_of_birth",
+        "occupation",
+        "job_title",
+        "employer",
+        "industry",
+        "salary_range",
+        "income_range",
+        "education",
+        "degree",
+        "school",
+        "university",
+        "graduation_year",
+        "class_year",
+        "diagnosis",
+        "condition",
+        "blood_type",
+        "insurance_plan",
+        "medication"
+      ],
+      "minCorrelationCoefficient": 0.7,
+      "correlationAnalysisEnabled": true,
+      "maxCorrelationColumnsToAnalyze": 100
+    },
+    "heuristicThreshold": 0.7,
+    "reportingThreshold": 0.5,
+    "entropyCalculationEnabled": false,
+    "stopPipelineOnHighConfidence": true
+  },
+  "summary": {
+    "tablesScanned": 5,
+    "columnsScanned": 53,
+    "piiColumnsFound": 24,
+    "totalPiiCandidates": 27,
+    "quasiIdentifierColumnsFound": 0,
+    "scanDurationMillis": 27910
+  },
+  "piiFindings": [
+    {
+      "status": "SUCCESS",
+      "tableName": "t_emp_rec",
+      "columnName": "vctr_2",
+      "dataType": "VARCHAR",
+      "piiType": "EMAIL",
+      "confidenceScore": 0.9,
+      "detectionMethods": [
+        "REGEX"
+      ],
+      "sensitiveData": true,
+      "quasiIdentifierRiskScore": 0,
+      "correlatedColumns": [],
+      "quasiIdentifier": false,
+      "success": true
+    },
+    {
+      "status": "SUCCESS",
+      "tableName": "t_act_log",
+      "columnName": "geo_dt",
+      "dataType": "VARCHAR",
+      "piiType": "LOCATION",
+      "confidenceScore": 0.8,
+      "detectionMethods": [
+        "REGEX"
+      ],
+      "sensitiveData": true,
+      "quasiIdentifierRiskScore": 0,
+      "correlatedColumns": [],
+      "quasiIdentifier": false,
+      "success": true
+    },
+    {
+      "status": "SUCCESS",
+      "tableName": "t_act_log",
+      "columnName": "ua_val",
+      "dataType": "TEXT",
+      "piiType": "QUASI_ID_DEVICE",
+      "confidenceScore": 0.6000000000000001,
+      "detectionMethods": [
+        "NER",
+        "QUASI_IDENTIFIER"
+      ],
+      "sensitiveData": true,
+      "quasiIdentifierRiskScore": 0,
+      "correlatedColumns": [],
+      "quasiIdentifier": false,
+      "success": true
+    },
+    {
+      "status": "SUCCESS",
+      "tableName": "t_usr_data",
+      "columnName": "eth_val",
+      "dataType": "VARCHAR",
+      "piiType": "QUASI_ID_ETHNICITY",
+      "confidenceScore": 0.68,
+      "detectionMethods": [
+        "QUASI_IDENTIFIER"
+      ],
+      "sensitiveData": true,
+      "quasiIdentifierRiskScore": 0,
+      "correlatedColumns": [],
+      "quasiIdentifier": false,
+      "success": true
+    },
+    {
+      "status": "SUCCESS",
+      "tableName": "t_usr_data",
+      "columnName": "dt_val",
+      "dataType": "DATE",
+      "piiType": "DATE",
+      "confidenceScore": 0.6,
+      "detectionMethods": [
+        "REGEX"
+      ],
+      "sensitiveData": true,
+      "quasiIdentifierRiskScore": 0,
+      "correlatedColumns": [],
+      "quasiIdentifier": false,
+      "success": true
+    },
+    {
+      "status": "SUCCESS",
+      "tableName": "t_txn_data",
+      "columnName": "cc_xdt",
+      "dataType": "DATE",
+      "piiType": "DATE",
+      "confidenceScore": 0.6,
+      "detectionMethods": [
+        "REGEX",
+        "HEURISTIC"
+      ],
+      "sensitiveData": true,
+      "quasiIdentifierRiskScore": 0,
+      "correlatedColumns": [],
+      "quasiIdentifier": false,
+      "success": true
+    },
+    {
+      "status": "SUCCESS",
+      "tableName": "t_usr_data",
+      "columnName": "data_1",
+      "dataType": "VARCHAR",
+      "piiType": "EMAIL",
+      "confidenceScore": 0.9,
+      "detectionMethods": [
+        "REGEX"
+      ],
+      "sensitiveData": true,
+      "quasiIdentifierRiskScore": 0,
+      "correlatedColumns": [],
+      "quasiIdentifier": false,
+      "success": true
+    },
+    {
+      "status": "SUCCESS",
+      "tableName": "t_act_log",
+      "columnName": "bw_id",
+      "dataType": "VARCHAR",
+      "piiType": "QUASI_ID_DEVICE",
+      "confidenceScore": 0.6000000000000001,
+      "detectionMethods": [
+        "QUASI_IDENTIFIER"
+      ],
+      "sensitiveData": true,
+      "quasiIdentifierRiskScore": 0,
+      "correlatedColumns": [],
+      "quasiIdentifier": false,
+      "success": true
+    },
+    {
+      "status": "SUCCESS",
+      "tableName": "t_txn_data",
+      "columnName": "dev_id",
+      "dataType": "VARCHAR",
+      "piiType": "QUASI_ID_DEVICE",
+      "confidenceScore": 0.6000000000000001,
+      "detectionMethods": [
+        "QUASI_IDENTIFIER"
+      ],
+      "sensitiveData": true,
+      "quasiIdentifierRiskScore": 0,
+      "correlatedColumns": [],
+      "quasiIdentifier": false,
+      "success": true
+    },
+    {
+      "status": "SUCCESS",
+      "tableName": "t_usr_data",
+      "columnName": "uni_code",
+      "dataType": "VARCHAR",
+      "piiType": "SSN",
+      "confidenceScore": 0.855,
+      "detectionMethods": [
+        "REGEX"
+      ],
+      "sensitiveData": true,
+      "quasiIdentifierRiskScore": 0,
+      "correlatedColumns": [],
+      "quasiIdentifier": false,
+      "success": true
+    },
+    {
+      "status": "SUCCESS",
+      "tableName": "t_emp_rec",
+      "columnName": "hire_dt",
+      "dataType": "DATE",
+      "piiType": "DATE",
+      "confidenceScore": 0.6,
+      "detectionMethods": [
+        "REGEX"
+      ],
+      "sensitiveData": true,
+      "quasiIdentifierRiskScore": 0,
+      "correlatedColumns": [],
+      "quasiIdentifier": false,
+      "success": true
+    },
+    {
+      "status": "SUCCESS",
+      "tableName": "t_emp_rec",
+      "columnName": "lvl_val",
+      "dataType": "INT",
+      "piiType": "QUASI_ID_MEDIUM_CARDINALITY",
+      "confidenceScore": 0.7466666666666666,
+      "detectionMethods": [
+        "QUASI_IDENTIFIER"
+      ],
+      "sensitiveData": true,
+      "quasiIdentifierRiskScore": 0,
+      "correlatedColumns": [],
+      "quasiIdentifier": false,
+      "success": true
+    },
+    {
+      "status": "SUCCESS",
+      "tableName": "t_usr_data",
+      "columnName": "loc_code",
+      "dataType": "VARCHAR",
+      "piiType": "QUASI_ID_ZIPCODE",
+      "confidenceScore": 0.7200000000000001,
+      "detectionMethods": [
+        "QUASI_IDENTIFIER"
+      ],
+      "sensitiveData": true,
+      "quasiIdentifierRiskScore": 0,
+      "correlatedColumns": [],
+      "quasiIdentifier": false,
+      "success": true
+    },
+    {
+      "status": "SUCCESS",
+      "tableName": "t_txn_data",
+      "columnName": "loc_dt",
+      "dataType": "VARCHAR",
+      "piiType": "QUASI_ID_LOCATION",
+      "confidenceScore": 0.5599999999999999,
+      "detectionMethods": [
+        "NER",
+        "QUASI_IDENTIFIER"
+      ],
+      "sensitiveData": true,
+      "quasiIdentifierRiskScore": 0,
+      "correlatedColumns": [],
+      "quasiIdentifier": false,
+      "success": true
+    },
+    {
+      "status": "SUCCESS",
+      "tableName": "t_usr_data",
+      "columnName": "sal_val",
+      "dataType": "DECIMAL",
+      "piiType": "QUASI_ID_INCOME",
+      "confidenceScore": 0.6400000000000001,
+      "detectionMethods": [
+        "QUASI_IDENTIFIER"
+      ],
+      "sensitiveData": true,
+      "quasiIdentifierRiskScore": 0,
+      "correlatedColumns": [],
+      "quasiIdentifier": false,
+      "success": true
+    },
+    {
+      "status": "SUCCESS",
+      "tableName": "t_emp_rec",
+      "columnName": "txt_data",
+      "dataType": "TEXT",
+      "piiType": "PERSON_NAME",
+      "confidenceScore": 0.6799419571955999,
+      "detectionMethods": [
+        "NER"
+      ],
+      "sensitiveData": true,
+      "quasiIdentifierRiskScore": 0,
+      "correlatedColumns": [],
+      "quasiIdentifier": false,
+      "success": true
+    },
+    {
+      "status": "SUCCESS",
+      "tableName": "t_txn_data",
+      "columnName": "ip_addr",
+      "dataType": "VARCHAR",
+      "piiType": "IP_ADDRESS",
+      "confidenceScore": 0.7,
+      "detectionMethods": [
+        "REGEX"
+      ],
+      "sensitiveData": true,
+      "quasiIdentifierRiskScore": 0,
+      "correlatedColumns": [],
+      "quasiIdentifier": false,
+      "success": true
+    },
+    {
+      "status": "SUCCESS",
+      "tableName": "t_usr_data",
+      "columnName": "gndr",
+      "dataType": "CHAR",
+      "piiType": "QUASI_ID_GENDER",
+      "confidenceScore": 0.68,
+      "detectionMethods": [
+        "QUASI_IDENTIFIER"
+      ],
+      "sensitiveData": true,
+      "quasiIdentifierRiskScore": 0,
+      "correlatedColumns": [],
+      "quasiIdentifier": false,
+      "success": true
+    },
+    {
+      "status": "SUCCESS",
+      "tableName": "t_emp_rec",
+      "columnName": "vctr_1",
+      "dataType": "VARCHAR",
+      "piiType": "PERSON_NAME",
+      "confidenceScore": 0.9287414371967315,
+      "detectionMethods": [
+        "NER"
+      ],
+      "sensitiveData": true,
+      "quasiIdentifierRiskScore": 0,
+      "correlatedColumns": [],
+      "quasiIdentifier": false,
+      "success": true
+    },
+    {
+      "status": "SUCCESS",
+      "tableName": "t_act_log",
+      "columnName": "ts_val",
+      "dataType": "TIMESTAMP",
+      "piiType": "DATE",
+      "confidenceScore": 0.6,
+      "detectionMethods": [
+        "REGEX"
+      ],
+      "sensitiveData": true,
+      "quasiIdentifierRiskScore": 0,
+      "correlatedColumns": [],
+      "quasiIdentifier": false,
+      "success": true
+    },
+    {
+      "status": "SUCCESS",
+      "tableName": "t_emp_rec",
+      "columnName": "vctr_3",
+      "dataType": "VARCHAR",
+      "piiType": "EMAIL",
+      "confidenceScore": 0.9,
+      "detectionMethods": [
+        "REGEX"
+      ],
+      "sensitiveData": true,
+      "quasiIdentifierRiskScore": 0,
+      "correlatedColumns": [],
+      "quasiIdentifier": false,
+      "success": true
+    },
+    {
+      "status": "SUCCESS",
+      "tableName": "t_usr_data",
+      "columnName": "data_3",
+      "dataType": "VARCHAR",
+      "piiType": "PHONE_NUMBER",
+      "confidenceScore": 0.8,
+      "detectionMethods": [
+        "REGEX"
+      ],
+      "sensitiveData": true,
+      "quasiIdentifierRiskScore": 0,
+      "correlatedColumns": [],
+      "quasiIdentifier": false,
+      "success": true
+    },
+    {
+      "status": "SUCCESS",
+      "tableName": "t_emp_rec",
+      "columnName": "cr_num",
+      "dataType": "VARCHAR",
+      "piiType": "CREDIT_CARD_NUMBER",
+      "confidenceScore": 0.5599999999999999,
+      "detectionMethods": [
+        "HEURISTIC"
+      ],
+      "sensitiveData": true,
+      "quasiIdentifierRiskScore": 0,
+      "correlatedColumns": [],
+      "quasiIdentifier": false,
+      "success": true
+    },
+    {
+      "status": "SUCCESS",
+      "tableName": "t_txn_data",
+      "columnName": "cc_val",
+      "dataType": "VARCHAR",
+      "piiType": "CREDIT_CARD_NUMBER",
+      "confidenceScore": 0.95,
+      "detectionMethods": [
+        "REGEX"
+      ],
+      "sensitiveData": true,
+      "quasiIdentifierRiskScore": 0,
+      "correlatedColumns": [],
+      "quasiIdentifier": false,
+      "success": true
+    }
+  ],
+  "quasiIdentifierFindings": [],
+  "correlatedColumnGroups": {},
+  "success": true
+}
+
+
+and the logs :
+
+2025-04-29T11:22:40.689+01:00  INFO 17868 --- [privsense] [           main] com.privsense.api.PrivSenseApplication   : Starting PrivSenseApplication using Java 21.0.2 with PID 17868 (C:\projects\privsense-CGI\privsense-api\target\classes started by amine.hmidanifilali in C:\projects\privsense-CGI\privsense-api)
+2025-04-29T11:22:40.691+01:00 DEBUG 17868 --- [privsense] [           main] com.privsense.api.PrivSenseApplication   : Running with Spring Boot v3.2.2, Spring v6.1.3
+2025-04-29T11:22:40.692+01:00  INFO 17868 --- [privsense] [           main] com.privsense.api.PrivSenseApplication   : No active profile set, falling back to 1 default profile: "default"
+2025-04-29T11:22:43.057+01:00  INFO 17868 --- [privsense] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-04-29T11:22:43.314+01:00  INFO 17868 --- [privsense] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 241 ms. Found 18 JPA repository interfaces.
+2025-04-29T11:22:45.216+01:00  INFO 17868 --- [privsense] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2025-04-29T11:22:45.234+01:00  INFO 17868 --- [privsense] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2025-04-29T11:22:45.235+01:00  INFO 17868 --- [privsense] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.18]
+2025-04-29T11:22:45.416+01:00  INFO 17868 --- [privsense] [           main] o.a.c.c.C.[.[localhost].[/privsense]     : Initializing Spring embedded WebApplicationContext
+2025-04-29T11:22:45.418+01:00  INFO 17868 --- [privsense] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 4629 ms
+Standard Commons Logging discovery in action with spring-jcl: please remove commons-logging.jar from classpath in order to avoid potential conflicts
+2025-04-29T11:22:45.544+01:00 DEBUG 17868 --- [privsense] [           main] c.p.api.filter.CorrelationIdFilter       : Filter 'correlationIdFilter' configured for use
+2025-04-29T11:22:45.806+01:00  INFO 17868 --- [privsense] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-04-29T11:22:45.921+01:00  INFO 17868 --- [privsense] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.4.1.Final
+2025-04-29T11:22:45.982+01:00  INFO 17868 --- [privsense] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2025-04-29T11:22:46.311+01:00  INFO 17868 --- [privsense] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-04-29T11:22:46.358+01:00  INFO 17868 --- [privsense] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2025-04-29T11:22:46.978+01:00  INFO 17868 --- [privsense] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@1835b783
+2025-04-29T11:22:46.981+01:00  INFO 17868 --- [privsense] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2025-04-29T11:22:49.748+01:00  INFO 17868 --- [privsense] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-04-29T11:22:50.407+01:00  INFO 17868 --- [privsense] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-04-29T11:22:51.391+01:00  INFO 17868 --- [privsense] [           main] c.p.s.factory.SamplingStrategyFactory    : Initialized with 4 database sampling strategies: [PostgreSQL, Microsoft SQL Server, MySQL, Oracle]
+2025-04-29T11:22:51.424+01:00  INFO 17868 --- [privsense] [           main] c.p.sampler.ConsolidatedSamplerImpl      : Initialized ConsolidatedSampler with thread pool size: 16 and max concurrent DB queries: 5
+2025-04-29T11:22:51.655+01:00  INFO 17868 --- [privsense] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2025-04-29T11:22:53.091+01:00  INFO 17868 --- [privsense] [           main] c.p.pii.strategy.HeuristicStrategy       : Initialized HeuristicStrategy with 28 keywords
+2025-04-29T11:22:53.981+01:00  INFO 17868 --- [privsense] [           main] c.p.pii.strategy.NerClientStrategy       : Initialized NerClientStrategy with service URL: http://localhost:5000/detect-pii, enabled: true
+2025-04-29T11:22:54.514+01:00  INFO 17868 --- [privsense] [           main] c.p.pii.strategy.NerClientStrategy       : Successfully connected to NER service at http://localhost:5000/detect-pii
+2025-04-29T11:22:54.528+01:00  INFO 17868 --- [privsense] [           main] c.p.p.strategy.QuasiIdentifierStrategy   : Initialized QuasiIdentifierStrategy with 14 patterns
+2025-04-29T11:22:54.570+01:00 DEBUG 17868 --- [privsense] [           main] c.privsense.pii.strategy.RegexStrategy   : Compiled pattern IPV6_ADDRESS: (([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4})
+2025-04-29T11:22:54.571+01:00 DEBUG 17868 --- [privsense] [           main] c.privsense.pii.strategy.RegexStrategy   : Compiled pattern US_PHONE: \b(?:\+?1[-. ]?)?\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})\b
+2025-04-29T11:22:54.572+01:00 DEBUG 17868 --- [privsense] [           main] c.privsense.pii.strategy.RegexStrategy   : Compiled pattern US_SSN: \b(?!000|666|9\d\d)\d{3}-(?!00)\d{2}-(?!0000)\d{4}\b
+2025-04-29T11:22:54.573+01:00 DEBUG 17868 --- [privsense] [           main] c.privsense.pii.strategy.RegexStrategy   : Compiled pattern IBAN: \b[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[0-9]{7}([A-Z0-9]?){0,16}\b
+2025-04-29T11:22:54.573+01:00 DEBUG 17868 --- [privsense] [           main] c.privsense.pii.strategy.RegexStrategy   : Compiled pattern DATE_FORMAT: \b(?:0[1-9]|1[0-2])/(?:0[1-9]|[12][0-9]|3[01])/(?:19|20)\d{2}\b|\b(?:19|20)\d{2}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])\b
+2025-04-29T11:22:54.574+01:00 DEBUG 17868 --- [privsense] [           main] c.privsense.pii.strategy.RegexStrategy   : Compiled pattern PASSPORT_NUMBER: \b[A-Z]{1,2}[0-9]{6,9}\b
+2025-04-29T11:22:54.574+01:00 DEBUG 17868 --- [privsense] [           main] c.privsense.pii.strategy.RegexStrategy   : Compiled pattern EMAIL_RFC5322: [a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}
+2025-04-29T11:22:54.575+01:00 DEBUG 17868 --- [privsense] [           main] c.privsense.pii.strategy.RegexStrategy   : Compiled pattern UK_NINO: \b[A-CEGHJ-PR-TW-Z]{1}[A-CEGHJ-NPR-TW-Z]{1}[0-9]{6}[A-D]{1}\b
+2025-04-29T11:22:54.576+01:00 DEBUG 17868 --- [privsense] [           main] c.privsense.pii.strategy.RegexStrategy   : Compiled pattern IP_ADDRESS: \b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b 
+2025-04-29T11:22:54.577+01:00 DEBUG 17868 --- [privsense] [           main] c.privsense.pii.strategy.RegexStrategy   : Compiled pattern CREDIT_CARD: \b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|6(?:011|5[0-9]{2})[0-9]{12}|(?:2131|1800|35\d{3})\d{11})\b
+2025-04-29T11:22:54.577+01:00 DEBUG 17868 --- [privsense] [           main] c.privsense.pii.strategy.RegexStrategy   : Compiled pattern MAC_ADDRESS: \b([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})\b
+2025-04-29T11:22:54.578+01:00 DEBUG 17868 --- [privsense] [           main] c.privsense.pii.strategy.RegexStrategy   : Compiled pattern LATITUDE_LONGITUDE: \b[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)\b
+2025-04-29T11:22:54.578+01:00  INFO 17868 --- [privsense] [           main] c.privsense.pii.strategy.RegexStrategy   : Initialized RegexStrategy with 12 patterns
+2025-04-29T11:22:54.598+01:00  INFO 17868 --- [privsense] [           main] c.p.pii.detector.PiiDetectorImpl         : Initialized PiiDetector with 4 strategies: HEURISTIC, NER, QUASI_IDENTIFIER, REGEX
+2025-04-29T11:22:56.209+01:00  INFO 17868 --- [privsense] [           main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@697607a5, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@3cc8f1c, org.springframework.security.web.context.SecurityContextHolderFilter@352e8cb3, org.springframework.security.web.header.HeaderWriterFilter@24fa43f8, org.springframework.web.filter.CorsFilter@2bdc94bd, org.springframework.security.web.authentication.logout.LogoutFilter@46bb8cba, org.springframework.security.web.authentication.www.BasicAuthenticationFilter@2536edc3, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@2b5f49de, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@2aea50a6, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@5a10b7e8, org.springframework.security.web.session.SessionManagementFilter@2375fe4a, org.springframework.security.web.access.ExceptionTranslationFilter@71daf5d6, org.springframework.security.web.access.intercept.AuthorizationFilter@3ad32e52]
+2025-04-29T11:22:57.902+01:00  INFO 17868 --- [privsense] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path '/privsense'
+2025-04-29T11:22:57.924+01:00  INFO 17868 --- [privsense] [           main] com.privsense.api.PrivSenseApplication   : Started PrivSenseApplication in 18.348 seconds (process running for 19.483)
+2025-04-29T11:25:15.013+01:00  INFO 17868 --- [privsense] [nio-8080-exec-1] o.a.c.c.C.[.[localhost].[/privsense]     : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-04-29T11:25:15.014+01:00  INFO 17868 --- [privsense] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2025-04-29T11:25:15.017+01:00  INFO 17868 --- [privsense] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 3 ms
+2025-04-29T11:25:17.310+01:00  INFO 17868 --- [privsense] [nio-8080-exec-9] o.springdoc.api.AbstractOpenApiResource  : Init duration for springdoc-openapi is: 1172 ms
+2025-04-29T11:25:49.384+01:00 DEBUG 17868 --- [privsense] [nio-8080-exec-7] c.privsense.db.service.JdbcDriverLoader  : Driver 'com.mysql.cj.jdbc.Driver' is already loaded
+2025-04-29T11:25:49.395+01:00  INFO 17868 --- [privsense] [nio-8080-exec-7] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Starting...
+2025-04-29T11:25:50.377+01:00  INFO 17868 --- [privsense] [nio-8080-exec-7] com.zaxxer.hikari.pool.HikariPool        : HikariPool-2 - Added connection com.mysql.cj.jdbc.ConnectionImpl@53120f76
+2025-04-29T11:25:50.378+01:00  INFO 17868 --- [privsense] [nio-8080-exec-7] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Start completed.
+2025-04-29T11:25:50.380+01:00  INFO 17868 --- [privsense] [nio-8080-exec-7] c.p.d.s.impl.DatabaseConnectorImpl       : Connected to MySQL 8.0.11
+2025-04-29T11:25:50.468+01:00  INFO 17868 --- [privsense] [nio-8080-exec-7] c.p.d.s.impl.DatabaseConnectorImpl       : Database connection established: ID=66120e75-d3fe-43b7-9221-04c161a9c2a8, URL=jdbc:mysql://localhost:3306/test_schema      
+2025-04-29T11:28:13.374+01:00  INFO 17868 --- [privsense] [nio-8080-exec-8] c.p.a.s.impl.ScanPersistenceServiceImpl  : Created new scan with ID: 97cd10d3-e324-4588-8bc5-8a6e9f7afb85
+2025-04-29T11:28:13.449+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.a.s.impl.ScanPersistenceServiceImpl  : Updated scan status for scan ID 97cd10d3-e324-4588-8bc5-8a6e9f7afb85: EXTRACTING_METADATA
+2025-04-29T11:28:13.461+01:00  INFO 17868 --- [privsense] [ivsense-async-1] c.p.a.s.impl.ScanExecutionServiceImpl    : Job 97cd10d3-e324-4588-8bc5-8a6e9f7afb85: Extracting metadata from database
+2025-04-29T11:28:13.863+01:00  INFO 17868 --- [privsense] [ivsense-async-1] c.p.m.s.impl.JdbcMetadataExtractorImpl   : Detected database type: MySQL
+2025-04-29T11:28:13.864+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.m.scanner.MySqlMetadataScanner       : Checking if scanner supports database type: MySQL
+2025-04-29T11:28:13.865+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.m.scanner.MySqlMetadataScanner       : Database type MySQL is supported by MySqlMetadataScanner
+2025-04-29T11:28:13.865+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.m.s.impl.JdbcMetadataExtractorImpl   : Found scanner for database type: MySQL
+2025-04-29T11:28:13.866+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.m.scanner.MySqlMetadataScanner       : Using catalog name as schema name: test_schema
+2025-04-29T11:28:13.878+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.m.scanner.MySqlMetadataScanner       : Extracting relationships for catalog: test_schema, schema: null
+2025-04-29T11:28:13.879+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.m.scanner.MySqlMetadataScanner       : Using catalog name as schema name: test_schema
+2025-04-29T11:28:13.880+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.m.scanner.MySqlMetadataScanner       : Schema contains 5 tables:
+2025-04-29T11:28:13.880+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.m.scanner.MySqlMetadataScanner       :  - Table: t_act_log
+2025-04-29T11:28:13.881+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.m.scanner.MySqlMetadataScanner       :  - Table: t_emp_rec
+2025-04-29T11:28:13.881+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.m.scanner.MySqlMetadataScanner       :  - Table: t_med_data
+2025-04-29T11:28:13.881+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.m.scanner.MySqlMetadataScanner       :  - Table: t_txn_data
+2025-04-29T11:28:13.882+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.m.scanner.MySqlMetadataScanner       :  - Table: t_usr_data
+2025-04-29T11:28:13.882+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.m.scanner.MySqlMetadataScanner       : Table map contains 5 entries
+2025-04-29T11:28:13.883+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.m.scanner.MySqlMetadataScanner       : Executing foreign key query with schema: test_schema
+2025-04-29T11:28:13.884+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.m.scanner.MySqlMetadataScanner       : Executing SQL: SELECT   kcu.TABLE_NAME AS source_table,   kcu.COLUMN_NAME AS source_column,   kcu.REFERENCED_TABLE_NAME AS target_table,   kcu.REFERENCED_COLUMN_NAME AS target_column,   kcu.CONSTRAINT_NAME,   rc.UPDATE_RULE,   rc.DELETE_RULE FROM information_schema.KEY_COLUMN_USAGE kcu JOIN information_schema.REFERENTIAL_CONSTRAINTS rc   ON kcu.CONSTRAINT_NAME = rc.CONSTRAINT_NAME   AND kcu.CONSTRAINT_SCHEMA = rc.CONSTRAINT_SCHEMA WHERE kcu.CONSTRAINT_SCHEMA = 'test_schema'   AND kcu.REFERENCED_TABLE_NAME IS NOT NULL
+2025-04-29T11:28:13.947+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.m.scanner.MySqlMetadataScanner       : Found relationship: t_med_data.usr_fk -> t_usr_data.usr_id (t_med_data_ibfk_1)
+2025-04-29T11:28:13.948+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.m.scanner.MySqlMetadataScanner       : Added relationship t_med_data_ibfk_1 to tables t_med_data and t_usr_data
+2025-04-29T11:28:13.948+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.m.scanner.MySqlMetadataScanner       : Found relationship: t_txn_data.usr_ref -> t_usr_data.usr_id (t_txn_data_ibfk_1)
+2025-04-29T11:28:13.949+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.m.scanner.MySqlMetadataScanner       : Added relationship t_txn_data_ibfk_1 to tables t_txn_data and t_usr_data
+2025-04-29T11:28:13.949+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.m.scanner.MySqlMetadataScanner       : Found relationship: t_act_log.usr_ref -> t_usr_data.usr_id (t_act_log_ibfk_1)
+2025-04-29T11:28:13.950+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.m.scanner.MySqlMetadataScanner       : Added relationship t_act_log_ibfk_1 to tables t_act_log and t_usr_data
+2025-04-29T11:28:13.950+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.m.scanner.MySqlMetadataScanner       : Found 3 relationships in total
+2025-04-29T11:28:13.956+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.a.s.impl.ScanPersistenceServiceImpl  : Updated scan status for scan ID 97cd10d3-e324-4588-8bc5-8a6e9f7afb85: SAMPLING
+2025-04-29T11:28:13.961+01:00  INFO 17868 --- [privsense] [ivsense-async-1] c.p.a.s.impl.ScanExecutionServiceImpl    : Job 97cd10d3-e324-4588-8bc5-8a6e9f7afb85: Sampling data from columns
+2025-04-29T11:28:13.964+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.sampler.ConsolidatedSamplerImpl      : Extracting samples for 54 columns with sample size 10
+2025-04-29T11:28:13.970+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-1] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:13.970+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-2] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:13.971+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-3] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:13.971+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-4] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:13.973+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-4] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_act_log.bw_id: SELECT `bw_id` FROM `t_act_log` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:13.972+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-2] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_act_log.usr_ref: SELECT `usr_ref` FROM `t_act_log` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:13.972+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-3] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_act_log.ts_val: SELECT `ts_val` FROM `t_act_log` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:13.972+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-1] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_act_log.log_id: SELECT `log_id` FROM `t_act_log` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:13.973+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-5] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:13.974+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-5] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_act_log.geo_dt: SELECT `geo_dt` FROM `t_act_log` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:13.974+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-6] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:13.975+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-7] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:13.975+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-8] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:13.975+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-6] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_act_log.ua_val: SELECT `ua_val` FROM `t_act_log` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:13.975+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-7] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_act_log.cookie_id: SELECT `cookie_id` FROM `t_act_log` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:13.975+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-8] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_act_log.ref_url: SELECT `ref_url` FROM `t_act_log` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:13.975+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-9] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:13.976+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-9] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_act_log.search_q: SELECT `search_q` FROM `t_act_log` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:13.976+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-10] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:13.976+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-11] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:13.977+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-11] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_act_log.act_type: SELECT `act_type` FROM `t_act_log` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:13.977+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-12] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:13.977+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-12] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_emp_rec.rec_id: SELECT `rec_id` FROM `t_emp_rec` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:13.977+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-10] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_act_log.sess_dur: SELECT `sess_dur` FROM `t_act_log` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:13.979+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-14] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:13.979+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-13] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:13.979+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-16] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:13.979+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-15] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:13.980+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-14] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_emp_rec.vctr_1: SELECT `vctr_1` FROM `t_emp_rec` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:13.980+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-15] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_emp_rec.vctr_2: SELECT `vctr_2` FROM `t_emp_rec` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:13.980+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-13] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_emp_rec.emp_code: SELECT `emp_code` FROM `t_emp_rec` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:13.980+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-16] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_emp_rec.vctr_3: SELECT `vctr_3` FROM `t_emp_rec` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.002+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-5] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.002+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-1] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.003+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-1] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_emp_rec.cr_num: SELECT `cr_num` FROM `t_emp_rec` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.003+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-5] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_emp_rec.txt_data: SELECT `txt_data` FROM `t_emp_rec` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.005+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-7] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.005+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-2] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.006+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-4] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.006+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-7] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_emp_rec.lvl_val: SELECT `lvl_val` FROM `t_emp_rec` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.006+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-2] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_emp_rec.id_img: SELECT `id_img` FROM `t_emp_rec` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.007+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-4] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_emp_rec.dept_cd: SELECT `dept_cd` FROM `t_emp_rec` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.013+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-9] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.013+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-11] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.014+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-9] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_emp_rec.hire_dt: SELECT `hire_dt` FROM `t_emp_rec` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.014+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-11] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_med_data.data_id: SELECT `data_id` FROM `t_med_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.020+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-8] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.021+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-8] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_med_data.p_ref: SELECT `p_ref` FROM `t_med_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.022+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-10] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.024+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-10] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_med_data.usr_fk: SELECT `usr_fk` FROM `t_med_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.027+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-15] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.027+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-6] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.027+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-14] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.028+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-14] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_med_data.bio_id: SELECT `bio_id` FROM `t_med_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.027+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-3] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.028+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-15] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_med_data.seq_1: SELECT `seq_1` FROM `t_med_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.028+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-6] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_med_data.seq_2: SELECT `seq_2` FROM `t_med_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.029+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-3] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_med_data.ins_num: SELECT `ins_num` FROM `t_med_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.030+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-1] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.031+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-1] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_med_data.val_1: SELECT `val_1` FROM `t_med_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.037+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-5] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.037+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-5] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_med_data.val_2: SELECT `val_2` FROM `t_med_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.043+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-12] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.043+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-13] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.043+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-12] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_med_data.obs_dt: SELECT `obs_dt` FROM `t_med_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.043+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-13] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_med_data.bl_tp: SELECT `bl_tp` FROM `t_med_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.049+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-7] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.049+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-4] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.049+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-7] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_txn_data.txn_id: SELECT `txn_id` FROM `t_txn_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.051+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-4] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_txn_data.usr_ref: SELECT `usr_ref` FROM `t_txn_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.052+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-3] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.052+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-2] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.052+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-11] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.054+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-2] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_txn_data.tx_dt: SELECT `tx_dt` FROM `t_txn_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.052+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-16] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.054+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-3] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_txn_data.amt_val: SELECT `amt_val` FROM `t_txn_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.054+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-11] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_txn_data.loc_dt: SELECT `loc_dt` FROM `t_txn_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.054+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-16] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_txn_data.dev_id: SELECT `dev_id` FROM `t_txn_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.055+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-14] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.055+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-14] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_txn_data.ip_addr: SELECT `ip_addr` FROM `t_txn_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.057+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-8] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.057+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-10] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.058+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-8] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_txn_data.cc_val: SELECT `cc_val` FROM `t_txn_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.058+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-10] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_txn_data.cc_xdt: SELECT `cc_xdt` FROM `t_txn_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.061+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-15] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.062+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-15] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_txn_data.tx_hash: SELECT `tx_hash` FROM `t_txn_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.064+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-6] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.064+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-1] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.064+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-5] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.064+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-12] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.064+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-6] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_usr_data.data_2: SELECT `data_2` FROM `t_usr_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.065+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-1] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_usr_data.data_1: SELECT `data_1` FROM `t_usr_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.065+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-5] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_usr_data.usr_id: SELECT `usr_id` FROM `t_usr_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.065+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-12] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_usr_data.data_3: SELECT `data_3` FROM `t_usr_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.071+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-2] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.071+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-13] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.071+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-4] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.072+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-7] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.072+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-2] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_usr_data.dt_val: SELECT `dt_val` FROM `t_usr_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.072+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-13] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_usr_data.uni_code: SELECT `uni_code` FROM `t_usr_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.073+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-4] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_usr_data.loc_code: SELECT `loc_code` FROM `t_usr_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.073+01:00 DEBUG 17868 --- [privsense] [pool-2-thread-7] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_usr_data.gndr: SELECT `gndr` FROM `t_usr_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.076+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-11] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.076+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-11] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_usr_data.eth_val: SELECT `eth_val` FROM `t_usr_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.077+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-14] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.077+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-14] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_usr_data.sal_val: SELECT `sal_val` FROM `t_usr_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.078+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-16] c.p.s.factory.SamplingStrategyFactory    : Selected strategy MySqlSamplingStrategy for database: MySQL
+2025-04-29T11:28:14.078+01:00 DEBUG 17868 --- [privsense] [ool-2-thread-16] c.p.sampler.ConsolidatedSamplerImpl      : Sampling query for t_usr_data.stat_cd: SELECT `stat_cd` FROM `t_usr_data` ORDER BY RAND() LIMIT 10
+2025-04-29T11:28:14.105+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.a.s.impl.ScanPersistenceServiceImpl  : Updated scan status for scan ID 97cd10d3-e324-4588-8bc5-8a6e9f7afb85: DETECTING_PII
+2025-04-29T11:28:14.109+01:00  INFO 17868 --- [privsense] [ivsense-async-1] c.p.a.s.impl.ScanExecutionServiceImpl    : Job 97cd10d3-e324-4588-8bc5-8a6e9f7afb85: Detecting PII in sampled data
+2025-04-29T11:28:14.113+01:00  INFO 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for 53 columns
+2025-04-29T11:28:14.114+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: vctr_2
+2025-04-29T11:28:14.116+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='EMAIL', confidenceScore=0.44800000000000006, detectionMethod='HEURISTIC', evidence='Column comment contains: mail'}
+2025-04-29T11:28:14.124+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='ADDRESS', confidenceScore=0.42, detectionMethod='HEURISTIC', evidence='Column comment contains: addr'}
+2025-04-29T11:28:14.124+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='EMAIL', confidenceScore=0.5599999999999999, detectionMethod='HEURISTIC', evidence='Column comment contains: email'}
+2025-04-29T11:28:14.125+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='ADDRESS', confidenceScore=0.48999999999999994, detectionMethod='HEURISTIC', evidence='Column comment contains: address'}
+2025-04-29T11:28:14.138+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.privsense.pii.strategy.RegexStrategy   : Added PII candidate for pattern EMAIL_RFC5322: EMAIL (10 matches, score=0.9)
+2025-04-29T11:28:14.140+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : High confidence PII found by regex strategy, skipping remaining strategies
+2025-04-29T11:28:14.146+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: vctr_2. Found 1 candidate(s) after filtering.
+2025-04-29T11:28:14.146+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: geo_dt
+2025-04-29T11:28:14.149+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.privsense.pii.strategy.RegexStrategy   : Added PII candidate for pattern LATITUDE_LONGITUDE: LOCATION (10 matches, score=0.8)
+2025-04-29T11:28:14.151+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : High confidence PII found by regex strategy, skipping remaining strategies
+2025-04-29T11:28:14.152+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: geo_dt. Found 1 candidate(s) after filtering.
+2025-04-29T11:28:14.153+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: ins_num
+2025-04-29T11:28:14.156+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 5 samples
+2025-04-29T11:28:14.303+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: ins_num. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:14.303+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: ua_val
+2025-04-29T11:28:14.307+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:17.106+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Added PII candidate from NER: ORGANIZATION (score=0.5136630207300186)
+2025-04-29T11:28:17.108+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: ua_val. Found 2 candidate(s) after filtering.
+2025-04-29T11:28:17.108+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: stat_cd
+2025-04-29T11:28:17.109+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:17.123+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: stat_cd. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:17.123+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: eth_val
+2025-04-29T11:28:17.124+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:17.139+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: eth_val. Found 1 candidate(s) after filtering.
+2025-04-29T11:28:17.141+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: dt_val
+2025-04-29T11:28:17.141+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='DATE_OF_BIRTH', confidenceScore=0.48999999999999994, detectionMethod='HEURISTIC', evidence='Column comment contains: birth'}
+2025-04-29T11:28:17.144+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.privsense.pii.strategy.RegexStrategy   : Added PII candidate for pattern DATE_FORMAT: DATE (10 matches, score=0.6)
+2025-04-29T11:28:17.144+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:17.859+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: dt_val. Found 1 candidate(s) after filtering.
+2025-04-29T11:28:17.860+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: bio_id
+2025-04-29T11:28:17.861+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 5 samples
+2025-04-29T11:28:17.875+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: bio_id. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:17.876+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: seq_1
+2025-04-29T11:28:17.877+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 5 samples
+2025-04-29T11:28:17.889+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: seq_1. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:17.889+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: rec_id
+2025-04-29T11:28:17.890+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:18.761+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: rec_id. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:18.761+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: cc_xdt
+2025-04-29T11:28:18.761+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='CREDIT_CARD_NUMBER', confidenceScore=0.5599999999999999, detectionMethod='HEURISTIC', evidence='Column comment contains: credit'}
+2025-04-29T11:28:18.761+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='CREDIT_CARD_NUMBER', confidenceScore=0.35, detectionMethod='HEURISTIC', evidence='Column comment contains: card'}
+2025-04-29T11:28:18.762+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.privsense.pii.strategy.RegexStrategy   : Added PII candidate for pattern DATE_FORMAT: DATE (10 matches, score=0.6)
+2025-04-29T11:28:18.763+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:19.291+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: cc_xdt. Found 2 candidate(s) after filtering.
+2025-04-29T11:28:19.291+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: data_1
+2025-04-29T11:28:19.292+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='EMAIL', confidenceScore=0.44800000000000006, detectionMethod='HEURISTIC', evidence='Column comment contains: mail'}
+2025-04-29T11:28:19.292+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='ADDRESS', confidenceScore=0.42, detectionMethod='HEURISTIC', evidence='Column comment contains: addr'}
+2025-04-29T11:28:19.292+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='EMAIL', confidenceScore=0.5599999999999999, detectionMethod='HEURISTIC', evidence='Column comment contains: email'}
+2025-04-29T11:28:19.292+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='ADDRESS', confidenceScore=0.48999999999999994, detectionMethod='HEURISTIC', evidence='Column comment contains: address'}
+2025-04-29T11:28:19.293+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.privsense.pii.strategy.RegexStrategy   : Added PII candidate for pattern EMAIL_RFC5322: EMAIL (10 matches, score=0.9)
+2025-04-29T11:28:19.293+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : High confidence PII found by regex strategy, skipping remaining strategies
+2025-04-29T11:28:19.294+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: data_1. Found 1 candidate(s) after filtering.
+2025-04-29T11:28:19.296+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: bw_id
+2025-04-29T11:28:19.297+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:20.479+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: bw_id. Found 1 candidate(s) after filtering.
+2025-04-29T11:28:20.480+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: dev_id
+2025-04-29T11:28:20.481+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:21.576+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: dev_id. Found 1 candidate(s) after filtering.
+2025-04-29T11:28:21.576+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: data_id
+2025-04-29T11:28:21.578+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 5 samples
+2025-04-29T11:28:21.591+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: data_id. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:21.594+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: val_1
+2025-04-29T11:28:21.596+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 5 samples
+2025-04-29T11:28:21.605+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: val_1. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:21.605+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: ref_url
+2025-04-29T11:28:21.607+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:22.516+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: ref_url. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:22.517+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: tx_dt
+2025-04-29T11:28:22.518+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:23.578+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: tx_dt. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:23.578+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: uni_code
+2025-04-29T11:28:23.579+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='SSN', confidenceScore=0.63, detectionMethod='HEURISTIC', evidence='Column comment contains: ssn'}
+2025-04-29T11:28:23.579+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.privsense.pii.strategy.RegexStrategy   : Added PII candidate for pattern US_SSN: SSN (9 matches, score=0.855)
+2025-04-29T11:28:23.580+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : High confidence PII found by regex strategy, skipping remaining strategies
+2025-04-29T11:28:23.580+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: uni_code. Found 1 candidate(s) after filtering.
+2025-04-29T11:28:23.580+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: hire_dt
+2025-04-29T11:28:23.581+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.privsense.pii.strategy.RegexStrategy   : Added PII candidate for pattern DATE_FORMAT: DATE (10 matches, score=0.6)
+2025-04-29T11:28:23.583+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:24.253+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: hire_dt. Found 1 candidate(s) after filtering.
+2025-04-29T11:28:24.253+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: val_2
+2025-04-29T11:28:24.254+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 5 samples
+2025-04-29T11:28:24.261+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: val_2. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:24.261+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: lvl_val
+2025-04-29T11:28:24.261+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:24.268+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: lvl_val. Found 1 candidate(s) after filtering.
+2025-04-29T11:28:24.268+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: loc_code
+2025-04-29T11:28:24.269+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:25.442+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: loc_code. Found 1 candidate(s) after filtering.
+2025-04-29T11:28:25.442+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: amt_val
+2025-04-29T11:28:25.443+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:26.221+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: amt_val. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:26.221+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: obs_dt
+2025-04-29T11:28:26.222+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 5 samples
+2025-04-29T11:28:26.229+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: obs_dt. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:26.229+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: act_type
+2025-04-29T11:28:26.230+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:26.583+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: act_type. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:26.583+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: p_ref
+2025-04-29T11:28:26.583+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 5 samples
+2025-04-29T11:28:26.590+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: p_ref. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:26.590+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: bl_tp
+2025-04-29T11:28:26.591+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 5 samples
+2025-04-29T11:28:26.599+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: bl_tp. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:26.601+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: log_id
+2025-04-29T11:28:26.604+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:27.009+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: log_id. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:27.010+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: search_q
+2025-04-29T11:28:27.010+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 8 samples
+2025-04-29T11:28:27.907+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: search_q. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:27.907+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: loc_dt
+2025-04-29T11:28:27.908+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:28.750+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Added PII candidate from NER: ORGANIZATION (score=0.542952898144722)
+2025-04-29T11:28:28.751+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: loc_dt. Found 2 candidate(s) after filtering.
+2025-04-29T11:28:28.752+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: sal_val
+2025-04-29T11:28:28.753+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:29.659+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: sal_val. Found 1 candidate(s) after filtering.
+2025-04-29T11:28:29.659+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: txt_data
+2025-04-29T11:28:29.661+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:30.703+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Added PII candidate from NER: ORGANIZATION (score=0.4923538575569788)
+2025-04-29T11:28:30.704+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Added PII candidate from NER: PERSON_NAME (score=0.6799419571955999)
+2025-04-29T11:28:30.704+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : High confidence PII found by NER strategy, skipping remaining strategies
+2025-04-29T11:28:30.704+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: txt_data. Found 1 candidate(s) after filtering.
+2025-04-29T11:28:30.704+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: dept_cd
+2025-04-29T11:28:30.705+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:30.927+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: dept_cd. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:30.927+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: ip_addr
+2025-04-29T11:28:30.928+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='ADDRESS', confidenceScore=0.48, detectionMethod='HEURISTIC', evidence='Column name contains: addr'}
+2025-04-29T11:28:30.928+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='ADDRESS', confidenceScore=0.42, detectionMethod='HEURISTIC', evidence='Column comment contains: addr'}
+2025-04-29T11:28:30.929+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='ADDRESS', confidenceScore=0.48999999999999994, detectionMethod='HEURISTIC', evidence='Column comment contains: address'}
+2025-04-29T11:28:30.930+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.privsense.pii.strategy.RegexStrategy   : Added PII candidate for pattern IP_ADDRESS: IP_ADDRESS (10 matches, score=0.7)
+2025-04-29T11:28:30.930+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:31.776+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: ip_addr. Found 1 candidate(s) after filtering.
+2025-04-29T11:28:31.776+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: data_2
+2025-04-29T11:28:31.776+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='ADDRESS', confidenceScore=0.42, detectionMethod='HEURISTIC', evidence='Column comment contains: addr'}
+2025-04-29T11:28:31.776+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='ADDRESS', confidenceScore=0.48999999999999994, detectionMethod='HEURISTIC', evidence='Column comment contains: address'}
+2025-04-29T11:28:31.792+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:32.939+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: data_2. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:32.940+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: cookie_id
+2025-04-29T11:28:32.941+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:33.784+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: cookie_id. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:33.784+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: usr_fk
+2025-04-29T11:28:33.785+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 5 samples
+2025-04-29T11:28:33.792+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: usr_fk. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:33.792+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: tx_hash
+2025-04-29T11:28:33.793+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:34.443+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: tx_hash. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:34.443+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: emp_code
+2025-04-29T11:28:34.444+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:35.898+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: emp_code. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:35.898+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: gndr
+2025-04-29T11:28:35.898+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:35.905+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: gndr. Found 1 candidate(s) after filtering.
+2025-04-29T11:28:35.905+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: vctr_1
+2025-04-29T11:28:35.905+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='PERSON_NAME', confidenceScore=0.42, detectionMethod='HEURISTIC', evidence='Column comment contains: name'}
+2025-04-29T11:28:35.906+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:36.945+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Added PII candidate from NER: PERSON_NAME (score=0.9287414371967315)
+2025-04-29T11:28:36.947+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : High confidence PII found by NER strategy, skipping remaining strategies
+2025-04-29T11:28:36.947+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: vctr_1. Found 1 candidate(s) after filtering.
+2025-04-29T11:28:36.947+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: ts_val
+2025-04-29T11:28:36.948+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.privsense.pii.strategy.RegexStrategy   : Added PII candidate for pattern DATE_FORMAT: DATE (10 matches, score=0.6)
+2025-04-29T11:28:36.948+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:37.666+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: ts_val. Found 1 candidate(s) after filtering.
+2025-04-29T11:28:37.666+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: id_img
+2025-04-29T11:28:37.666+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='CREDIT_CARD_NUMBER', confidenceScore=0.35, detectionMethod='HEURISTIC', evidence='Column comment contains: card'}
+2025-04-29T11:28:37.667+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.privsense.pii.strategy.RegexStrategy   : No string samples to analyze for column: id_img
+2025-04-29T11:28:37.668+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : No string samples to analyze for column: id_img
+2025-04-29T11:28:37.668+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: id_img. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:37.668+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: vctr_3
+2025-04-29T11:28:37.669+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='EMAIL', confidenceScore=0.44800000000000006, detectionMethod='HEURISTIC', evidence='Column comment contains: mail'}
+2025-04-29T11:28:37.669+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='ADDRESS', confidenceScore=0.42, detectionMethod='HEURISTIC', evidence='Column comment contains: addr'}
+2025-04-29T11:28:37.669+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='EMAIL', confidenceScore=0.5599999999999999, detectionMethod='HEURISTIC', evidence='Column comment contains: email'}
+2025-04-29T11:28:37.670+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='ADDRESS', confidenceScore=0.48999999999999994, detectionMethod='HEURISTIC', evidence='Column comment contains: address'}
+2025-04-29T11:28:37.671+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.privsense.pii.strategy.RegexStrategy   : Added PII candidate for pattern EMAIL_RFC5322: EMAIL (10 matches, score=0.9)
+2025-04-29T11:28:37.671+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : High confidence PII found by regex strategy, skipping remaining strategies
+2025-04-29T11:28:37.672+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: vctr_3. Found 1 candidate(s) after filtering.
+2025-04-29T11:28:37.672+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: data_3
+2025-04-29T11:28:37.672+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='PHONE_NUMBER', confidenceScore=0.48999999999999994, detectionMethod='HEURISTIC', evidence='Column comment contains: phone'}
+2025-04-29T11:28:37.673+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.privsense.pii.strategy.RegexStrategy   : Added PII candidate for pattern US_PHONE: PHONE_NUMBER (10 matches, score=0.8)
+2025-04-29T11:28:37.674+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : High confidence PII found by regex strategy, skipping remaining strategies
+2025-04-29T11:28:37.674+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: data_3. Found 1 candidate(s) after filtering.
+2025-04-29T11:28:37.674+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: sess_dur
+2025-04-29T11:28:37.675+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:38.343+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: sess_dur. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:38.343+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: usr_ref
+2025-04-29T11:28:38.343+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:38.561+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: usr_ref. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:38.561+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: cr_num
+2025-04-29T11:28:38.561+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='CREDIT_CARD_NUMBER', confidenceScore=0.5599999999999999, detectionMethod='HEURISTIC', evidence='Column comment contains: credit'}
+2025-04-29T11:28:38.561+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='CREDIT_CARD_NUMBER', confidenceScore=0.35, detectionMethod='HEURISTIC', evidence='Column comment contains: card'}
+2025-04-29T11:28:38.562+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:39.720+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: cr_num. Found 1 candidate(s) after filtering.
+2025-04-29T11:28:39.720+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: usr_id
+2025-04-29T11:28:39.720+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:40.356+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: usr_id. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:40.357+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: txn_id
+2025-04-29T11:28:40.358+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 10 samples
+2025-04-29T11:28:41.014+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: txn_id. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:41.014+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: cc_val
+2025-04-29T11:28:41.014+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='CREDIT_CARD_NUMBER', confidenceScore=0.5599999999999999, detectionMethod='HEURISTIC', evidence='Column comment contains: credit'}
+2025-04-29T11:28:41.015+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.HeuristicStrategy       : Added PII candidate: PiiCandidate{id=null, piiType='CREDIT_CARD_NUMBER', confidenceScore=0.35, detectionMethod='HEURISTIC', evidence='Column comment contains: card'}
+2025-04-29T11:28:41.015+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.privsense.pii.strategy.RegexStrategy   : Added PII candidate for pattern CREDIT_CARD: CREDIT_CARD_NUMBER (10 matches, score=0.95)
+2025-04-29T11:28:41.016+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : High confidence PII found by regex strategy, skipping remaining strategies
+2025-04-29T11:28:41.016+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: cc_val. Found 1 candidate(s) after filtering.
+2025-04-29T11:28:41.016+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Starting PII detection for column: seq_2
+2025-04-29T11:28:41.017+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.strategy.NerClientStrategy       : Calling NER service with 5 samples
+2025-04-29T11:28:41.024+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection for column: seq_2. Found 0 candidate(s) after filtering.
+2025-04-29T11:28:41.026+01:00  INFO 17868 --- [privsense] [ivsense-async-1] p.p.a.CorrelatedQuasiIdentifiersAnalyzer : Analyzing correlations between 9 potential quasi-identifiers
+2025-04-29T11:28:41.029+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed correlated quasi-identifier analysis
+2025-04-29T11:28:41.029+01:00  INFO 17868 --- [privsense] [ivsense-async-1] c.p.pii.detector.PiiDetectorImpl         : Completed PII detection. Found PII in 24/53 columns
+2025-04-29T11:28:41.035+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.a.s.impl.ScanPersistenceServiceImpl  : Saving 1 schema info objects
+2025-04-29T11:28:41.119+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.a.s.impl.ScanPersistenceServiceImpl  : Saved 5 table info objects
+2025-04-29T11:28:41.122+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.a.s.impl.ScanPersistenceServiceImpl  : Saved 53 column info objects
+2025-04-29T11:28:41.123+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.a.s.impl.ScanPersistenceServiceImpl  : Saved 3 relationship info objects
+2025-04-29T11:28:41.153+01:00  INFO 17868 --- [privsense] [ivsense-async-1] c.p.a.s.impl.ScanPersistenceServiceImpl  : Saved scan results for scan ID 97cd10d3-e324-4588-8bc5-8a6e9f7afb85: 53 columns scanned, 24 PII columns found
+2025-04-29T11:28:41.244+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.a.s.impl.ScanPersistenceServiceImpl  : Updated scan status for scan ID 97cd10d3-e324-4588-8bc5-8a6e9f7afb85: GENERATING_REPORT
+2025-04-29T11:28:41.247+01:00  INFO 17868 --- [privsense] [ivsense-async-1] c.p.a.s.impl.ScanExecutionServiceImpl    : Job 97cd10d3-e324-4588-8bc5-8a6e9f7afb85: Generating compliance report
+2025-04-29T11:28:41.251+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.r.ConsolidatedReportServiceImpl      : Generating report for scan ID: 97cd10d3-e324-4588-8bc5-8a6e9f7afb85
+2025-04-29T11:28:41.258+01:00 DEBUG 17868 --- [privsense] [ivsense-async-1] c.p.r.ConsolidatedReportServiceImpl      : Generating compliance report for scan ID: 97cd10d3-e324-4588-8bc5-8a6e9f7afb85
+2025-04-29T11:28:41.259+01:00  INFO 17868 --- [privsense] [ivsense-async-1] c.p.r.ConsolidatedReportServiceImpl      : Generated compliance report for scan ID: 97cd10d3-e324-4588-8bc5-8a6e9f7afb85 with 24 PII findings and 0 quasi-identifier findings
+2025-04-29T11:28:41.259+01:00  INFO 17868 --- [privsense] [ivsense-async-1] c.p.r.ConsolidatedReportServiceImpl      : Generated report for scan ID: 97cd10d3-e324-4588-8bc5-8a6e9f7afb85 with 24 PII findings and 0 quasi-identifier findings    
+2025-04-29T11:28:41.557+01:00  INFO 17868 --- [privsense] [ivsense-async-1] c.p.a.s.impl.ScanPersistenceServiceImpl  : Saved compliance report for scan ID: 97cd10d3-e324-4588-8bc5-8a6e9f7afb85
+2025-04-29T11:28:41.641+01:00  INFO 17868 --- [privsense] [ivsense-async-1] c.p.a.s.impl.ScanPersistenceServiceImpl  : Completed scan ID: 97cd10d3-e324-4588-8bc5-8a6e9f7afb85
+2025-04-29T11:28:41.644+01:00  INFO 17868 --- [privsense] [ivsense-async-1] c.p.a.s.impl.ScanExecutionServiceImpl    : Job 97cd10d3-e324-4588-8bc5-8a6e9f7afb85: Scan completed successfully
+2025-04-29T11:30:13.151+01:00 DEBUG 17868 --- [privsense] [io-8080-exec-10] c.p.a.s.i.ScanJobManagementServiceImpl   : Job 97cd10d3-e324-4588-8bc5-8a6e9f7afb85 is marked as completed
+2025-04-29T11:30:13.151+01:00 DEBUG 17868 --- [privsense] [io-8080-exec-10] c.p.api.controller.ScanController        : Report request for job 97cd10d3-e324-4588-8bc5-8a6e9f7afb85: status=COMPLETED, completed=true
+2025-04-29T11:30:13.151+01:00 DEBUG 17868 --- [privsense] [io-8080-exec-10] c.p.api.controller.ScanController        : Processing report request for job 97cd10d3-e324-4588-8bc5-8a6e9f7afb85 in format json
+2025-04-29T11:30:13.153+01:00 DEBUG 17868 --- [privsense] [io-8080-exec-10] c.p.a.s.i.ScanJobManagementServiceImpl   : Job 97cd10d3-e324-4588-8bc5-8a6e9f7afb85 is marked as completed
+

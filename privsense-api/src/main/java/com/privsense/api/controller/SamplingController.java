@@ -4,6 +4,7 @@ import com.privsense.api.dto.BatchSamplingRequest;
 import com.privsense.api.dto.BatchSamplingResponse;
 import com.privsense.api.dto.SamplingRequest;
 import com.privsense.api.dto.SamplingResponse;
+import com.privsense.api.dto.config.SamplingConfigDTO;
 import com.privsense.api.exception.ResourceNotFoundException;
 import com.privsense.api.service.SamplingService;
 import com.privsense.core.exception.DataSamplingException;
@@ -79,7 +80,7 @@ public class SamplingController {
         summary = "Get sampling configuration",
         description = "Returns the available sampling configuration options"
     )
-    public ResponseEntity<SamplingResponse.ConfigurationInfo> getSamplingConfiguration() {
+    public ResponseEntity<SamplingConfigDTO> getSamplingConfiguration() {
         return ResponseEntity.ok(samplingService.getSamplingConfiguration());
     }
 }

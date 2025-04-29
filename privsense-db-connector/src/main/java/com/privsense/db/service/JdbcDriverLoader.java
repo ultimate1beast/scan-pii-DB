@@ -1,6 +1,6 @@
 package com.privsense.db.service;
 
-import com.privsense.db.config.DatabaseConnectionConfig;
+import com.privsense.core.config.PrivSenseConfigProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,12 +27,12 @@ public class JdbcDriverLoader {
     
     private static final Logger logger = LoggerFactory.getLogger(JdbcDriverLoader.class);
     
-    private final DatabaseConnectionConfig connectionConfig;
+    private final PrivSenseConfigProperties configProperties;
     private final Set<String> loadedDrivers = new HashSet<>();
     
     @Autowired
-    public JdbcDriverLoader(DatabaseConnectionConfig connectionConfig) {
-        this.connectionConfig = connectionConfig;
+    public JdbcDriverLoader(PrivSenseConfigProperties configProperties) {
+        this.configProperties = configProperties;
     }
     
     /**
@@ -98,7 +98,7 @@ public class JdbcDriverLoader {
      * @return true if the driver was loaded successfully
      */
     private boolean loadDriverFromExternalDirectory(String driverClassName) {
-        String driverDir = connectionConfig.getJdbc().getDriverDir();
+        String driverDir = configProperties.getDb().getJdbc().getDriverDir();
         Path dirPath = Paths.get(driverDir);
         File dir = dirPath.toFile();
         
@@ -156,6 +156,6 @@ public class JdbcDriverLoader {
      * Returns the current driver directory path
      */
     public String getDriverDirectory() {
-        return connectionConfig.getJdbc().getDriverDir();
+        return configProperties.getDb().getJdbc().getDriverDir();
     }
 }

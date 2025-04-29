@@ -1,36 +1,47 @@
 package com.privsense.api.dto;
 
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
+import com.privsense.api.dto.base.BaseRequestDTO;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 /**
- * Data Transfer Object for database connection requests.
+ * DTO pour les requêtes de connexion à la base de données.
  */
 @Data
-public class DatabaseConnectionRequest {
-
-    @NotBlank(message = "Host is required")
+@SuperBuilder
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+public class DatabaseConnectionRequest extends BaseRequestDTO {
+    
+    @NotBlank(message = "L'hôte est requis")
     private String host;
-
-    @NotNull(message = "Port is required")
-    @Min(value = 1, message = "Port must be greater than 0")
-    @Max(value = 65535, message = "Port must be less than or equal to 65535")
+    
+    @NotNull(message = "Le port est requis")
     private Integer port;
-
-    @NotBlank(message = "Database name is required")
+    
+    @NotBlank(message = "Le nom de la base de données est requis")
     private String databaseName;
-
-    @NotBlank(message = "Username is required")
+    
+    @NotBlank(message = "Le nom d'utilisateur est requis")
     private String username;
-
-   // @NotBlank(message = "Password is required")
+    
+    
     private String password;
     
-    @NotBlank(message = "Driver class name is required")
+    @NotBlank(message = "La classe de pilote JDBC est requise")
     private String driverClassName;
     
     private Boolean sslEnabled;
+    
+    private String sslTrustStorePath;
+    
+    private String sslTrustStorePassword;
 }

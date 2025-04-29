@@ -1,8 +1,5 @@
 package com.privsense.core.model;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,11 +21,6 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Table(name = "schemas")
-@JsonIdentityInfo(
-    generator = ObjectIdGenerators.PropertyGenerator.class,
-    property = "schemaName",
-    scope = SchemaInfo.class
-)
 public class SchemaInfo {
     
     @Id
@@ -45,7 +37,6 @@ public class SchemaInfo {
     private UUID scanId;
     
     @Builder.Default
-    @JsonManagedReference
     @ToString.Exclude
     @EqualsAndHashCode.Exclude // Prevent recursion in equals/hashCode
     @OneToMany(mappedBy = "schema", cascade = CascadeType.ALL, orphanRemoval = true)

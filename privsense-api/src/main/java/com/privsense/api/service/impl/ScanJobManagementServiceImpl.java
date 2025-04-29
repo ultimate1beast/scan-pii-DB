@@ -17,6 +17,9 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 
 /**
@@ -191,5 +194,55 @@ public class ScanJobManagementServiceImpl implements ScanJobManagementService {
 
         scanPersistenceService.failScan(jobId, "Job cancelled by user request");
         log.info("Job {}: Cancelled by user request", jobId);
+    }
+
+    @Override
+    public List<Object> getAllJobs() {
+        // Get all scans from the database
+        List<ScanMetadata> scans = scanPersistenceService.getAllScans();
+        
+        // Convert to JobStatus objects
+        List<JobStatus> statusList = scans.stream()
+            .map(scan -> {
+                JobStatus status = new JobStatus(scan.getId(), scan.getConnectionId());
+                
+                // Convert database status to in-memory status
+                switch (scan.getStatus()) {
+                    case PENDING:
+                        status.setState(JobState.PENDING);
+                        break;
+                    case EXTRACTING_METADATA:
+                        status.setState(JobState.EXTRACTING_METADATA);
+                        break;
+                    case SAMPLING:
+                        status.setState(JobState.SAMPLING);
+                        break;
+                    case DETECTING_PII:
+                        status.setState(JobState.DETECTING_PII);
+                        break;
+                    case GENERATING_REPORT:
+                        status.setState(JobState.GENERATING_REPORT);
+                        break;
+                    case COMPLETED:
+                        status.setState(JobState.COMPLETED);
+                        break;
+                    case FAILED:
+                        status.setState(JobState.FAILED);
+                        status.setErrorMessage(scan.getErrorMessage());
+                        break;
+                    default:
+                        status.setState(JobState.PENDING);
+                }
+                return status;
+            })
+            .collect(Collectors.toList());
+        
+        // Use DtoMapper to convert JobStatus list to ScanJobResponse list
+        List<ScanJobResponse> responseList = statusList.stream()
+            .map(dtoMapper::fromJobStatus)
+            .collect(Collectors.toList());
+            
+        log.debug("Retrieved {} scan jobs from the database", responseList.size());
+        return new ArrayList<>(responseList); // Convert to List<Object> by creating a new ArrayList
     }
 }

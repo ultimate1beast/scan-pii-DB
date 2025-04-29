@@ -3,9 +3,9 @@ package com.privsense.sampler;
 import com.privsense.core.exception.DataSamplingException;
 import com.privsense.core.model.ColumnInfo;
 import com.privsense.core.model.SampleData;
-
 import com.privsense.core.model.SchemaInfo;
 import com.privsense.core.service.ConsolidatedSampler;
+import com.privsense.core.config.PrivSenseConfigProperties;
 import com.privsense.sampler.factory.SamplingStrategyFactory;
 import com.privsense.sampler.strategy.DbSpecificSamplingStrategy;
 import com.privsense.sampler.util.EntropyCalculator;
@@ -37,7 +37,7 @@ public class ConsolidatedSamplerImpl implements ConsolidatedSampler {
 
     private static final Logger logger = LoggerFactory.getLogger(ConsolidatedSamplerImpl.class);
 
-    private final com.privsense.sampler.config.SamplingConfig samplerConfig;
+    private final PrivSenseConfigProperties configProperties;
     private final SamplingStrategyFactory strategyFactory;
     private final EntropyCalculator entropyCalculator;
     private final ExecutorService executorService;
@@ -46,16 +46,16 @@ public class ConsolidatedSamplerImpl implements ConsolidatedSampler {
     /**
      * Creates a new ConsolidatedSamplerImpl with the provided dependencies.
      *
-     * @param samplerConfig The configuration for sampling
+     * @param configProperties The unified configuration properties
      * @param strategyFactory The factory for database-specific strategies
      * @param entropyCalculator The calculator for entropy values
      */
     @Autowired
     public ConsolidatedSamplerImpl(
-            com.privsense.sampler.config.SamplingConfig samplerConfig,
+            PrivSenseConfigProperties configProperties,
             SamplingStrategyFactory strategyFactory,
             EntropyCalculator entropyCalculator) {
-        this.samplerConfig = samplerConfig;
+        this.configProperties = configProperties;
         this.strategyFactory = strategyFactory;
         this.entropyCalculator = entropyCalculator;
         
@@ -65,10 +65,10 @@ public class ConsolidatedSamplerImpl implements ConsolidatedSampler {
         this.executorService = Executors.newFixedThreadPool(corePoolSize);
         
         // Create a semaphore to limit concurrent database queries
-        this.dbQuerySemaphore = new Semaphore(samplerConfig.getMaxConcurrentDbQueries());
+        this.dbQuerySemaphore = new Semaphore(configProperties.getSampling().getMaxConcurrentDbQueries());
         
         logger.info("Initialized ConsolidatedSampler with thread pool size: {} and max concurrent DB queries: {}", 
-                corePoolSize, samplerConfig.getMaxConcurrentDbQueries());
+                corePoolSize, configProperties.getSampling().getMaxConcurrentDbQueries());
     }
 
     @Override
@@ -111,7 +111,7 @@ public class ConsolidatedSamplerImpl implements ConsolidatedSampler {
             }
             
             // Calculate entropy if required by configuration
-            if (samplerConfig.isEntropyCalculationEnabled()) {
+            if (configProperties.getSampling().isEntropyCalculationEnabled()) {
                 double entropy = entropyCalculator.calculateEntropy(sampleData);
                 sampleData.setEntropy(entropy);
             }
@@ -189,13 +189,13 @@ public class ConsolidatedSamplerImpl implements ConsolidatedSampler {
                     long rowCount = rs.getLong(1);
                     
                     // If table is very small, sample all rows
-                    if (rowCount <= samplerConfig.getSampleSize()) {
+                    if (rowCount <= configProperties.getSampling().getDefaultSize()) {
                         return (int) rowCount;
                     }
                     
                     // For larger tables, use the configured sample size
                     // A more sophisticated approach could scale this based on distribution
-                    return samplerConfig.getSampleSize();
+                    return configProperties.getSampling().getDefaultSize();
                 }
             }
         } catch (SQLException e) {
@@ -204,7 +204,7 @@ public class ConsolidatedSamplerImpl implements ConsolidatedSampler {
         }
         
         // Default to the configured sample size if we can't determine dynamically
-        return samplerConfig.getSampleSize();
+        return configProperties.getSampling().getDefaultSize();
     }
 
     @Override

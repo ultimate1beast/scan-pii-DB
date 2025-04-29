@@ -7,13 +7,15 @@ import com.privsense.core.model.PiiCandidate;
 import com.privsense.core.model.SampleData;
 import com.privsense.core.service.PiiDetectionStrategy;
 import com.privsense.core.service.PiiDetector;
-import com.privsense.pii.config.DetectionConfig;
+import com.privsense.core.config.PrivSenseConfigProperties;
+import com.privsense.pii.analyzer.CorrelatedQuasiIdentifiersAnalyzer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -26,15 +28,22 @@ public class PiiDetectorImpl implements PiiDetector {
     private static final Logger logger = LoggerFactory.getLogger(PiiDetectorImpl.class);
 
     private final List<PiiDetectionStrategy> strategies;
-    private final DetectionConfig config;
+    private final PrivSenseConfigProperties configProperties;
+    private final CorrelatedQuasiIdentifiersAnalyzer correlatedAnalyzer;
+    
+    // Cache for column results to optimize performance for large datasets
+    private final Map<String, DetectionResult> resultCache = new ConcurrentHashMap<>();
     
     /**
      * Constructor with dependency injection of strategies and configuration
      */
     @Autowired
-    public PiiDetectorImpl(List<PiiDetectionStrategy> strategies, DetectionConfig config) {
+    public PiiDetectorImpl(List<PiiDetectionStrategy> strategies, 
+                          PrivSenseConfigProperties configProperties,
+                          CorrelatedQuasiIdentifiersAnalyzer correlatedAnalyzer) {
         this.strategies = strategies;
-        this.config = config;
+        this.configProperties = configProperties;
+        this.correlatedAnalyzer = correlatedAnalyzer;
         
         logger.info("Initialized PiiDetector with {} strategies: {}", 
                 strategies.size(), 
@@ -44,6 +53,14 @@ public class PiiDetectorImpl implements PiiDetector {
     @Override
     public DetectionResult detectPii(ColumnInfo columnInfo, SampleData sampleData) {
         logger.debug("Starting PII detection for column: {}", columnInfo.getColumnName());
+        
+        // Check cache first
+        String cacheKey = columnInfo.getTable().getTableName() + "." + columnInfo.getColumnName();
+        if (resultCache.containsKey(cacheKey)) {
+            logger.debug("Using cached detection result for column: {}", columnInfo.getColumnName());
+            return resultCache.get(cacheKey);
+        }
+        
         DetectionResult result = new DetectionResult(columnInfo);
         
         try {
@@ -58,7 +75,8 @@ public class PiiDetectorImpl implements PiiDetector {
                 allCandidates.addAll(heuristicCandidates);
                 
                 // Check if we should continue with other strategies
-                if (config.isStopPipelineOnHighConfidence() && hasHighConfidenceCandidate(heuristicCandidates, config.getHeuristicThreshold())) {
+                if (configProperties.getDetection().isStopPipelineOnHighConfidence() && 
+                    hasHighConfidenceCandidate(heuristicCandidates, configProperties.getDetection().getHeuristicThreshold())) {
                     logger.debug("High confidence PII found by heuristic strategy, skipping remaining strategies");
                     skipRemainingStrategies = true;
                 }
@@ -72,8 +90,9 @@ public class PiiDetectorImpl implements PiiDetector {
                     allCandidates.addAll(regexCandidates);
                     
                     // Check if we should continue to NER
-                    if (config.isStopPipelineOnHighConfidence() && hasHighConfidenceCandidate(regexCandidates, config.getRegexThreshold())) {
-                        logger.debug("High confidence PII found by regex strategy, skipping NER strategy");
+                    if (configProperties.getDetection().isStopPipelineOnHighConfidence() && 
+                        hasHighConfidenceCandidate(regexCandidates, configProperties.getDetection().getRegexThreshold())) {
+                        logger.debug("High confidence PII found by regex strategy, skipping remaining strategies");
                         skipRemainingStrategies = true;
                     }
                 }
@@ -85,20 +104,41 @@ public class PiiDetectorImpl implements PiiDetector {
                 if (nerStrategy != null) {
                     List<PiiCandidate> nerCandidates = nerStrategy.detect(columnInfo, sampleData);
                     allCandidates.addAll(nerCandidates);
+                    
+                    // Check if we should continue to quasi-identifier detection
+                    if (configProperties.getDetection().isStopPipelineOnHighConfidence() && 
+                        hasHighConfidenceCandidate(nerCandidates, configProperties.getDetection().getNerThreshold())) {
+                        logger.debug("High confidence PII found by NER strategy, skipping remaining strategies");
+                        skipRemainingStrategies = true;
+                    }
                 }
             }
             
-            // 5. Resolve conflicts and filter by minimum threshold
-            List<PiiCandidate> resolvedCandidates = resolveCandidateConflicts(allCandidates);
-            List<PiiCandidate> filteredCandidates = filterCandidatesByThreshold(resolvedCandidates, config.getMinimumReportingThreshold());
+            // 5. Execute QuasiIdentifierStrategy if enabled and needed
+            if (!skipRemainingStrategies && configProperties.getDetection().isQuasiIdentifierEnabled()) {
+                PiiDetectionStrategy quasiIdStrategy = getStrategyByName("QUASI_IDENTIFIER");
+                if (quasiIdStrategy != null) {
+                    List<PiiCandidate> quasiIdCandidates = quasiIdStrategy.detect(columnInfo, sampleData);
+                    allCandidates.addAll(quasiIdCandidates);
+                }
+            }
             
-            // 6. Set the final candidates in the result
+            // 6. Resolve conflicts and filter by minimum threshold
+            List<PiiCandidate> resolvedCandidates = resolveCandidateConflicts(allCandidates);
+            List<PiiCandidate> filteredCandidates = filterCandidatesByThreshold(resolvedCandidates, 
+                configProperties.getDetection().getReportingThreshold());
+            
+            // 7. Set the final candidates in the result
             filteredCandidates.forEach(result::addCandidate);
             
             logger.debug("Completed PII detection for column: {}. Found {} candidate(s) after filtering.", 
                     columnInfo.getColumnName(), filteredCandidates.size());
             
+            // Add to cache for future use
+            resultCache.put(cacheKey, result);
+            
         } catch (Exception e) {
+            logger.error("Error detecting PII in column {}: {}", columnInfo.getColumnName(), e.getMessage());
             throw new PiiDetectionException("Error detecting PII in column " + columnInfo.getColumnName(), e);
         }
         
@@ -124,6 +164,19 @@ public class PiiDetectorImpl implements PiiDetector {
                 
                 // Add empty result to maintain column mapping
                 results.add(new DetectionResult(columnInfo));
+            }
+        }
+
+        // Perform correlated quasi-identifier analysis if enabled
+        if (configProperties.getDetection().isQuasiIdentifierEnabled() && 
+            configProperties.getDetection().getQuasiIdentifier().isCorrelationAnalysisEnabled()) {
+            
+            try {
+                results = correlatedAnalyzer.analyzeQuasiIdentifierCorrelations(results, columnDataMap);
+                logger.debug("Completed correlated quasi-identifier analysis");
+            } catch (Exception e) {
+                logger.error("Error performing correlation analysis: {}", e.getMessage());
+                // Continue with the original results if correlation analysis fails
             }
         }
         
@@ -186,5 +239,14 @@ public class PiiDetectorImpl implements PiiDetector {
         return candidates.stream()
                 .filter(c -> c.getConfidenceScore() >= threshold)
                 .collect(Collectors.toList());
+    }
+    
+    /**
+     * Clears the detection result cache
+     * This should be called when the system configuration changes
+     */
+    public void clearCache() {
+        resultCache.clear();
+        logger.debug("PII detection result cache cleared");
     }
 }

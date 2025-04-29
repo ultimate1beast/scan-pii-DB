@@ -218,4 +218,12 @@ public class ScanPersistenceServiceImpl implements ScanPersistenceService {
     public List<DetectionResult> getPiiResultsByScanId(UUID scanId) {
         return detectionResultRepository.findPiiResultsByScanId(scanId);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ScanMetadata> getAllScans() {
+        List<ScanMetadata> scans = scanRepository.findAll();
+        log.debug("Retrieved {} scans from the database", scans.size());
+        return scans;
+    }
 }

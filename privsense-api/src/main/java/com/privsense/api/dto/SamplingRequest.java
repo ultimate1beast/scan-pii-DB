@@ -1,36 +1,37 @@
 package com.privsense.api.dto;
 
-import jakarta.validation.constraints.Min;
+import com.privsense.api.dto.base.BaseRequestDTO;
+import com.privsense.api.dto.config.SamplingConfigDTO;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.util.UUID;
 
 /**
- * DTO for requesting a test sampling of a database column.
+ * DTO pour les requêtes d'échantillonnage d'une table/colonne spécifique.
  */
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SamplingRequest {
+@EqualsAndHashCode(callSuper = true)
+public class SamplingRequest extends BaseRequestDTO {
     
-    @NotNull(message = "Connection ID is required")
+    @NotNull(message = "L'ID de connexion est requis")
     private UUID connectionId;
     
-    @NotNull(message = "Table name is required")
+    @NotBlank(message = "Le nom de la table est requis")
     private String tableName;
     
-    @NotNull(message = "Column name is required")
+    @NotBlank(message = "Le nom de la colonne est requis")
     private String columnName;
     
-    @Min(value = 1, message = "Sample size must be at least 1")
-    private Integer sampleSize;
-    
-    private String samplingMethod;
-    
-    private Boolean calculateEntropy;
+    @Valid
+    private SamplingConfigDTO config = new SamplingConfigDTO();
 }

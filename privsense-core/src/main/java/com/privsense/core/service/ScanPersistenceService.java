@@ -106,6 +106,13 @@ public interface ScanPersistenceService {
     ScanMetadata save(ScanMetadata scanMetadata);
     
     /**
+     * Gets all scans in the system.
+     *
+     * @return A list of all scans
+     */
+    List<ScanMetadata> getAllScans();
+    
+    /**
      * Saves a compliance report for a scan.
      *
      * @param scanId The ID of the scan

@@ -5,6 +5,9 @@ import com.privsense.api.dto.BatchSamplingRequest;
 import com.privsense.api.dto.BatchSamplingResponse;
 import com.privsense.api.dto.SamplingRequest;
 import com.privsense.api.dto.SamplingResponse;
+import com.privsense.api.dto.config.SamplingConfigDTO;
+import com.privsense.api.dto.result.ColumnSamplingResult;
+import com.privsense.api.dto.result.TableSamplingResult;
 import com.privsense.api.exception.ResourceNotFoundException;
 import com.privsense.api.mapper.DtoMapper;
 import com.privsense.core.model.ColumnInfo;
@@ -16,7 +19,6 @@ import com.privsense.core.service.ConsolidatedSampler;
 import com.privsense.core.service.DatabaseConnector;
 import com.privsense.core.service.MetadataExtractor;
 
-import com.privsense.sampler.config.SamplingConfig.SamplingMethod;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -75,7 +77,7 @@ public class SamplingService {
             }
             
             // If entropy calculation wasn't specified in the request, use the default from config
-            if (request.getCalculateEntropy() == null) {
+            if (request.getConfig().getEntropyCalculationEnabled() == null) {
                 config.setEntropyCalculationEnabled(configProperties.getSampling().isEntropyCalculationEnabled());
             }
             
@@ -122,14 +124,11 @@ public class SamplingService {
      * 
      * @return The configuration information
      */
-    public SamplingResponse.ConfigurationInfo getSamplingConfiguration() {
-        return SamplingResponse.ConfigurationInfo.builder()
-            .defaultSampleSize(configProperties.getSampling().getDefaultSize())
+    public SamplingConfigDTO getSamplingConfiguration() {
+        return SamplingConfigDTO.builder()
+            .sampleSize(configProperties.getSampling().getDefaultSize())
             .maxConcurrentQueries(configProperties.getSampling().getMaxConcurrentDbQueries())
-            .availableSamplingMethods(Arrays.stream(SamplingMethod.values())
-                .map(Enum::name)
-                .collect(Collectors.toList()))
-            .defaultSamplingMethod(configProperties.getSampling().getDefaultMethod())
+            .samplingMethod(configProperties.getSampling().getDefaultMethod())
             .build();
     }
 
@@ -156,38 +155,33 @@ public class SamplingService {
             defaultConfig.setSamplingMethod(configProperties.getSampling().getDefaultMethod());
         }
                 
-        int maxConcurrentTables = request.getMaxConcurrentTables() != null ?
-                request.getMaxConcurrentTables() : configProperties.getSampling().getMaxConcurrentDbQueries();
+        int maxConcurrentTables = configProperties.getSampling().getMaxConcurrentDbQueries();
         
-        List<BatchSamplingResponse.TableSamplingResult> tableResults = new ArrayList<>();
+        List<TableSamplingResult> tableResults = new ArrayList<>();
         int totalColumnsProcessed = 0;
         
         try (Connection connection = databaseConnector.getConnection(request.getConnectionId())) {
             // Create thread pool for parallel sampling
             ExecutorService executor = Executors.newFixedThreadPool(maxConcurrentTables);
-            List<Future<BatchSamplingResponse.TableSamplingResult>> futures = new ArrayList<>();
+            List<Future<TableSamplingResult>> futures = new ArrayList<>();
             
             // Submit sampling tasks for each table
             for (BatchSamplingRequest.TableSamplingRequest tableRequest : request.getTables()) {
-                futures.add(executor.submit(() -> {
-                    return sampleTable(
-                        connection, 
-                        tableRequest, 
-                        defaultConfig
-                    );
-                }));
+                futures.add(executor.submit(() -> 
+                    sampleTableForBatch(connection, tableRequest, defaultConfig)
+                ));
             }
             
             // Collect all results
-            for (Future<BatchSamplingResponse.TableSamplingResult> future : futures) {
+            for (Future<TableSamplingResult> future : futures) {
                 try {
-                    BatchSamplingResponse.TableSamplingResult result = future.get();
+                    TableSamplingResult result = future.get();
                     tableResults.add(result);
                     totalColumnsProcessed += result.getColumnCount();
                 } catch (InterruptedException | ExecutionException e) {
                     log.error("Error processing table sampling task", e);
                     // Add error result
-                    tableResults.add(BatchSamplingResponse.TableSamplingResult.builder()
+                    tableResults.add(TableSamplingResult.builder()
                         .tableName("Unknown")
                         .status("FAILED")
                         .errorMessage("Task execution failed: " + e.getMessage())
@@ -214,7 +208,7 @@ public class SamplingService {
         
         long totalExecutionTime = System.currentTimeMillis() - startTime;
         double avgTableTime = tableResults.stream()
-                .mapToLong(BatchSamplingResponse.TableSamplingResult::getSamplingTimeMs)
+                .mapToLong(TableSamplingResult::getSamplingTimeMs)
                 .average()
                 .orElse(0);
                 
@@ -231,7 +225,7 @@ public class SamplingService {
     /**
      * Samples a single table with specified columns.
      */
-    private BatchSamplingResponse.TableSamplingResult sampleTable(
+    private TableSamplingResult sampleTableForBatch(
             Connection connection,
             BatchSamplingRequest.TableSamplingRequest tableRequest,
             SamplingConfig defaultConfig) {
@@ -242,13 +236,16 @@ public class SamplingService {
         TableInfo tableInfo = new TableInfo();
         tableInfo.setTableName(tableRequest.getTableName());
         
-        Map<String, BatchSamplingResponse.ColumnSamplingResult> columnResults = new HashMap<>();
-        List<String> columns = tableRequest.getColumnNames();
+        Map<String, ColumnSamplingResult> columnResults = new HashMap<>();
+        Set<String> columnNames = tableRequest.getColumnNames();
         
         try {
             // If no columns specified, get all columns from the table
-            if (columns == null || columns.isEmpty()) {
+            List<String> columns = new ArrayList<>();
+            if (columnNames == null || columnNames.isEmpty()) {
                 columns = metadataExtractor.getTableColumns(connection, tableRequest.getTableName());
+            } else {
+                columns.addAll(columnNames);
             }
             
             // Configure sampling with table-specific sample size if provided
@@ -269,7 +266,7 @@ public class SamplingService {
                     SampleData sampleData = sampler.sampleColumn(connection, columnInfo, config.getSampleSize());
                     
                     // Use mapper to create the column result
-                    BatchSamplingResponse.ColumnSamplingResult columnResult = 
+                    ColumnSamplingResult columnResult = 
                             dtoMapper.toColumnSamplingResult(sampleData, columnInfo, config);
                             
                     // Add the top values which aren't mapped automatically
@@ -281,7 +278,7 @@ public class SamplingService {
                     log.error("Error sampling column {}.{}", tableRequest.getTableName(), columnName, e);
                     
                     // Add error result for this column
-                    BatchSamplingResponse.ColumnSamplingResult errorResult = BatchSamplingResponse.ColumnSamplingResult.builder()
+                    ColumnSamplingResult errorResult = ColumnSamplingResult.builder()
                             .columnName(columnName)
                             .status("FAILED")
                             .errorMessage(e.getMessage())
@@ -309,7 +306,7 @@ public class SamplingService {
             
             long tableSamplingTime = System.currentTimeMillis() - tableStartTime;
             
-            return BatchSamplingResponse.TableSamplingResult.builder()
+            return TableSamplingResult.builder()
                     .tableName(tableRequest.getTableName())
                     .columnCount(columnResults.size())
                     .columnResults(columnResults)
@@ -321,7 +318,7 @@ public class SamplingService {
         } catch (Exception e) {
             log.error("Error sampling table {}", tableRequest.getTableName(), e);
             
-            return BatchSamplingResponse.TableSamplingResult.builder()
+            return TableSamplingResult.builder()
                     .tableName(tableRequest.getTableName())
                     .status("FAILED")
                     .errorMessage("Table sampling failed: " + e.getMessage())

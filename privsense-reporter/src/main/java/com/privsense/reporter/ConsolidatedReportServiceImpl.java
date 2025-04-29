@@ -76,8 +76,8 @@ public class ConsolidatedReportServiceImpl implements ConsolidatedReportService 
                 scanContext.getDatabaseProductVersion()
         );
         
-        log.info("Generated report for scan ID: {} with {} PII findings", 
-                scanContext.getScanId(), report.getPiiFindings().size());
+        log.info("Generated report for scan ID: {} with {} PII findings and {} quasi-identifier findings", 
+                scanContext.getScanId(), report.getPiiFindings().size(), report.getQuasiIdentifierFindings().size());
         
         return report;
     }
@@ -100,6 +100,11 @@ public class ConsolidatedReportServiceImpl implements ConsolidatedReportService 
         // Separate PII findings from non-PII columns
         List<DetectionResult> piiFindings = detectionResults.stream()
                 .filter(DetectionResult::hasPii)
+                .collect(Collectors.toList());
+        
+        // Extract quasi-identifier findings
+        List<DetectionResult> quasiIdentifierFindings = detectionResults.stream()
+                .filter(DetectionResult::hasQuasiIdentifierRisk)
                 .collect(Collectors.toList());
         
         if (samplingConfig == null) {
@@ -125,6 +130,7 @@ public class ConsolidatedReportServiceImpl implements ConsolidatedReportService 
                 .columnsScanned(detectionResults.size())
                 .piiColumnsFound(piiFindings.size())
                 .totalPiiCandidates(calculateTotalPiiCandidates(piiFindings))
+                .quasiIdentifierColumnsFound(quasiIdentifierFindings.size())
                 .scanDurationMillis(scanDurationMillis)
                 .build();
         
@@ -147,8 +153,9 @@ public class ConsolidatedReportServiceImpl implements ConsolidatedReportService 
                 .totalTablesScanned(countTablesScanned(schema))
                 .totalColumnsScanned(detectionResults.size())
                 .totalPiiColumnsFound(piiFindings.size())
+                .totalQuasiIdentifierColumnsFound(quasiIdentifierFindings.size())
                 .summary(summary)
-                .detectionResults(piiFindings)
+                .detectionResults(detectionResults) // Include all results, not just PII findings
                 .build();
         
         // Establish bidirectional relationship between report and detection results
@@ -156,8 +163,8 @@ public class ConsolidatedReportServiceImpl implements ConsolidatedReportService 
             result.setReport(report);
         }
         
-        log.info("Generated compliance report for scan ID: {} with {} PII findings", 
-                scanId, piiFindings.size());
+        log.info("Generated compliance report for scan ID: {} with {} PII findings and {} quasi-identifier findings", 
+                scanId, piiFindings.size(), quasiIdentifierFindings.size());
         
         return report;
     }
@@ -176,10 +183,11 @@ public class ConsolidatedReportServiceImpl implements ConsolidatedReportService 
     public String exportReportToCsv(ComplianceReport report) {
         StringBuilder csv = new StringBuilder();
         
-        // Header
+        // Header for PII findings
+        csv.append("# PII Findings\n");
         csv.append("Table,Column,PII Type,Confidence Score,Detection Methods\n");
         
-        // Data rows
+        // Data rows for PII findings
         for (DetectionResult result : report.getSortedPiiFindings()) {
             csv.append(String.format("%s,%s,%s,%.2f,\"%s\"\n",
                     result.getColumnInfo().getTable().getTableName(),
@@ -187,6 +195,20 @@ public class ConsolidatedReportServiceImpl implements ConsolidatedReportService 
                     result.getHighestConfidencePiiType(),
                     result.getHighestConfidenceScore(),
                     String.join(", ", result.getDetectionMethods())));
+        }
+        
+        // Header for Quasi-identifier findings
+        csv.append("\n# Quasi-identifier Findings\n");
+        csv.append("Table,Column,QI Type,Risk Score,Correlated Columns\n");
+        
+        // Data rows for Quasi-identifier findings
+        for (DetectionResult result : report.getSortedQuasiIdentifierFindings()) {
+            csv.append(String.format("%s,%s,%s,%.2f,\"%s\"\n",
+                    result.getColumnInfo().getTable().getTableName(),
+                    result.getColumnInfo().getColumnName(),
+                    result.getQuasiIdentifierType(),
+                    result.getQuasiIdentifierRiskScore(),
+                    String.join(", ", result.getCorrelatedColumns())));
         }
         
         return csv.toString();
@@ -213,6 +235,7 @@ public class ConsolidatedReportServiceImpl implements ConsolidatedReportService 
         text.append(String.format("Tables scanned: %d\n", report.getTotalTablesScanned()));
         text.append(String.format("Columns scanned: %d\n", report.getTotalColumnsScanned()));
         text.append(String.format("PII columns found: %d\n", report.getTotalPiiColumnsFound()));
+        text.append(String.format("Quasi-identifier columns found: %d\n", report.getTotalQuasiIdentifierColumnsFound()));
         text.append(String.format("Scan duration: %s\n", report.getScanDuration()));
         
         // PII findings
@@ -230,6 +253,42 @@ public class ConsolidatedReportServiceImpl implements ConsolidatedReportService 
             text.append(String.format("   Confidence: %.2f%%\n", result.getHighestConfidenceScore() * 100));
             text.append(String.format("   Detection Methods: %s\n", String.join(", ", result.getDetectionMethods())));
             text.append("\n");
+        }
+        
+        // Quasi-identifier findings
+        text.append("\nQuasi-identifier Findings\n");
+        text.append("-----------------------\n");
+        List<DetectionResult> sortedQiFindings = report.getSortedQuasiIdentifierFindings();
+        
+        for (int i = 0; i < sortedQiFindings.size(); i++) {
+            DetectionResult result = sortedQiFindings.get(i);
+            text.append(String.format("%d. %s.%s\n", 
+                    i + 1,
+                    result.getColumnInfo().getTable().getTableName(),
+                    result.getColumnInfo().getColumnName()));
+            text.append(String.format("   Quasi-identifier Type: %s\n", result.getQuasiIdentifierType()));
+            text.append(String.format("   Risk Score: %.2f%%\n", result.getQuasiIdentifierRiskScore() * 100));
+            if (result.getCorrelatedColumns() != null && !result.getCorrelatedColumns().isEmpty()) {
+                text.append(String.format("   Correlated Columns: %s\n", String.join(", ", result.getCorrelatedColumns())));
+            }
+            text.append("\n");
+        }
+        
+        // Correlated column groups
+        Map<String, List<List<String>>> correlatedGroups = report.getCorrelatedColumnGroups();
+        if (!correlatedGroups.isEmpty()) {
+            text.append("\nCorrelated Column Groups\n");
+            text.append("----------------------\n");
+            
+            for (Map.Entry<String, List<List<String>>> entry : correlatedGroups.entrySet()) {
+                text.append(String.format("Type: %s\n", entry.getKey()));
+                
+                int groupCount = 1;
+                for (List<String> group : entry.getValue()) {
+                    text.append(String.format("   Group %d: %s\n", groupCount++, String.join(", ", group)));
+                }
+                text.append("\n");
+            }
         }
         
         return text.toString();

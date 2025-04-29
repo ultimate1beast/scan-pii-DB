@@ -205,10 +205,10 @@ public class ScanExecutionServiceImpl implements ScanExecutionService {
      */
     private SamplingConfig buildSamplingConfig(ScanRequest request) {
         return SamplingConfig.builder()
-                .sampleSize(request.getSampleSize() != null ?
-                        request.getSampleSize() : configProperties.getSampling().getDefaultSize())
-                .samplingMethod(request.getSamplingMethod() != null ?
-                        request.getSamplingMethod() : configProperties.getSampling().getDefaultMethod())
+                .sampleSize(request.getSamplingConfig().getSampleSize() != null ?
+                        request.getSamplingConfig().getSampleSize() : configProperties.getSampling().getDefaultSize())
+                .samplingMethod(request.getSamplingConfig().getSamplingMethod() != null ?
+                        request.getSamplingConfig().getSamplingMethod() : configProperties.getSampling().getDefaultMethod())
                 .maxConcurrentQueries(configProperties.getSampling().getMaxConcurrentDbQueries())
                 .build();
     }
@@ -218,16 +218,15 @@ public class ScanExecutionServiceImpl implements ScanExecutionService {
      */
     private DetectionConfig buildDetectionConfig(ScanRequest request) {
         return DetectionConfig.builder()
-                .heuristicThreshold(request.getHeuristicThreshold() != null ?
-                        request.getHeuristicThreshold() : configProperties.getDetection().getHeuristicThreshold())
-                .regexThreshold(request.getRegexThreshold() != null ?
-                        request.getRegexThreshold() : configProperties.getDetection().getRegexThreshold())
-                .nerThreshold(request.getNerThreshold() != null ?
-                        request.getNerThreshold() : configProperties.getDetection().getNerThreshold())
+                .heuristicThreshold(request.getDetectionConfig().getHeuristicThreshold() != null ?
+                        request.getDetectionConfig().getHeuristicThreshold() : configProperties.getDetection().getHeuristicThreshold())
+                .regexThreshold(request.getDetectionConfig().getRegexThreshold() != null ?
+                        request.getDetectionConfig().getRegexThreshold() : configProperties.getDetection().getRegexThreshold())
+                .nerThreshold(request.getDetectionConfig().getNerThreshold() != null ?
+                        request.getDetectionConfig().getNerThreshold() : configProperties.getDetection().getNerThreshold())
                 .reportingThreshold(configProperties.getDetection().getReportingThreshold())
                 .stopPipelineOnHighConfidence(configProperties.getDetection().isStopPipelineOnHighConfidence())
-                .entropyCalculationEnabled(request.getEntropyCalculationEnabled() != null ? 
-                        request.getEntropyCalculationEnabled() : configProperties.getDetection().isEntropyEnabled())
+                .entropyCalculationEnabled(configProperties.getDetection().isEntropyEnabled())
                 .build();
     }
 }

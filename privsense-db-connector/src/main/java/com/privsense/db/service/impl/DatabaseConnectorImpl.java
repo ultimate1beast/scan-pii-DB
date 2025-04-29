@@ -4,7 +4,7 @@ import com.privsense.core.repository.ConnectionRepository;
 import com.privsense.core.exception.DatabaseConnectionException;
 import com.privsense.core.model.DatabaseConnectionInfo;
 import com.privsense.core.service.DatabaseConnector;
-import com.privsense.db.config.DatabaseConnectionConfig;
+import com.privsense.core.config.PrivSenseConfigProperties;
 import com.privsense.db.service.JdbcDriverLoader;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -32,7 +32,7 @@ public class DatabaseConnectorImpl implements DatabaseConnector {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseConnectorImpl.class);
     
     private final JdbcDriverLoader jdbcDriverLoader;
-    private final DatabaseConnectionConfig connectionConfig;
+    private final PrivSenseConfigProperties configProperties;
     private final ConnectionRepository connectionRepository;
     
     // Maps connection IDs to connection pools (kept in memory for performance)
@@ -41,10 +41,10 @@ public class DatabaseConnectorImpl implements DatabaseConnector {
     @Autowired
     public DatabaseConnectorImpl(
             JdbcDriverLoader jdbcDriverLoader, 
-            DatabaseConnectionConfig connectionConfig,
+            PrivSenseConfigProperties configProperties,
             ConnectionRepository connectionRepository) {
         this.jdbcDriverLoader = jdbcDriverLoader;
-        this.connectionConfig = connectionConfig;
+        this.configProperties = configProperties;
         this.connectionRepository = connectionRepository;
     }
     
@@ -196,7 +196,7 @@ public class DatabaseConnectorImpl implements DatabaseConnector {
         config.setPassword(connectionInfo.getPassword());
         
         // Pool configuration from our centralized config
-        DatabaseConnectionConfig.Pool pool = connectionConfig.getPool();
+        PrivSenseConfigProperties.Db.Pool pool = configProperties.getDb().getPool();
         config.setConnectionTimeout(pool.getConnectionTimeout());
         config.setIdleTimeout(pool.getIdleTimeout());
         config.setMaxLifetime(pool.getMaxLifetime());

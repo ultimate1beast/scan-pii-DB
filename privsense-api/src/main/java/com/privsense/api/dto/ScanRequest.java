@@ -1,43 +1,40 @@
 package com.privsense.api.dto;
 
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
+import com.privsense.api.dto.base.BaseRequestDTO;
+import com.privsense.api.dto.config.DetectionConfigDTO;
+import com.privsense.api.dto.config.SamplingConfigDTO;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.util.List;
 import java.util.UUID;
 
 /**
- * Data Transfer Object for scan requests.
+ * Data Transfer Object pour les requêtes de scan.
+ * Utilise la composition plutôt que la duplication des propriétés.
  */
 @Data
-public class ScanRequest {
+@SuperBuilder
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+public class ScanRequest extends BaseRequestDTO {
     
-    @NotNull(message = "Connection ID is required")
+    @NotNull(message = "L'ID de connexion est requis")
     private UUID connectionId;
     
     private List<String> targetTables;
     
-    // Sampling configuration
-    @Min(value = 100, message = "Sample size must be at least 100")
-    @Max(value = 10000, message = "Sample size cannot exceed 10000")
-    private Integer sampleSize = 1000;
+    @Valid
+    @NotNull
+    private SamplingConfigDTO samplingConfig = new SamplingConfigDTO();
     
-    private String samplingMethod = "RANDOM";
-    
-    private Boolean entropyCalculationEnabled = false; // Added field
-    
-    // Detection configuration
-    @Min(value = 0, message = "Threshold must be between 0 and 1")
-    @Max(value = 1, message = "Threshold must be between 0 and 1")
-    private Float heuristicThreshold = 0.7f;
-    
-    @Min(value = 0, message = "Threshold must be between 0 and 1")
-    @Max(value = 1, message = "Threshold must be between 0 and 1")
-    private Float regexThreshold = 0.8f;
-    
-    @Min(value = 0, message = "Threshold must be between 0 and 1")
-    @Max(value = 1, message = "Threshold must be between 0 and 1")
-    private Float nerThreshold = 0.6f;
+    @Valid
+    @NotNull
+    private DetectionConfigDTO detectionConfig = new DetectionConfigDTO();
 }

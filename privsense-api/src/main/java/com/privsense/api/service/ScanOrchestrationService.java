@@ -9,7 +9,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Service that orchestrates the scan process by delegating to specialized services.
@@ -51,6 +53,19 @@ public class ScanOrchestrationService {
      */
     public void cancelScan(UUID jobId) {
         scanJobManagementService.cancelScan(jobId);
+    }
+
+    /**
+     * Gets all scan jobs in the system.
+     *
+     * @return A list of all scan jobs
+     */
+  
+    public List<ScanJobResponse> getAllJobs() {
+        List<Object> jobList = scanJobManagementService.getAllJobs();
+        return jobList.stream()
+                .map(job -> (ScanJobResponse) job)
+                .collect(Collectors.toList());
     }
 
     /**

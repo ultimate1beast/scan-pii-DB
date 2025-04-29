@@ -2,15 +2,23 @@ package com.privsense.api.controller;
 
 import com.privsense.api.dto.ConnectionResponse;
 import com.privsense.api.dto.DatabaseConnectionRequest;
+import com.privsense.api.dto.SchemaInfoDTO;
 import com.privsense.api.exception.ResourceNotFoundException;
 import com.privsense.api.mapper.DtoMapper;
+import com.privsense.api.mapper.EntityMapper;
 import com.privsense.api.repository.jpa.ConnectionJpaRepository;
 import com.privsense.core.exception.DatabaseConnectionException;
 import com.privsense.core.model.DatabaseConnectionInfo;
 import com.privsense.core.model.SchemaInfo;
+import com.privsense.core.model.TableInfo;
+import com.privsense.core.model.ColumnInfo;
+import com.privsense.core.model.RelationshipInfo;
 import com.privsense.core.service.DatabaseConnector;
 import com.privsense.core.service.MetadataExtractor;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -37,6 +45,7 @@ public class ConnectionController {
     private final MetadataExtractor metadataExtractor;
     private final ConnectionJpaRepository connectionRepository;
     private final DtoMapper dtoMapper;
+    private final EntityMapper entityMapper;
 
     /**
      * Creates a new database connection.
@@ -46,11 +55,20 @@ public class ConnectionController {
         summary = "Create a new database connection",
         description = "Establishes a connection to the database using the provided credentials"
     )
-    @ApiResponse(responseCode = "200", description = "Connection successful")
+    @ApiResponse(
+        responseCode = "200", 
+        description = "Connection successful",
+        content = @Content(mediaType = "application/json", schema = @Schema(implementation = ConnectionResponse.class))
+    )
     @ApiResponse(responseCode = "400", description = "Invalid request parameters")
     @ApiResponse(responseCode = "503", description = "Unable to connect to database")
     public ResponseEntity<ConnectionResponse> createConnection(
-            @Valid @RequestBody DatabaseConnectionRequest request) {
+            @Valid @RequestBody 
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "Database connection parameters", 
+                required = true, 
+                content = @Content(schema = @Schema(implementation = DatabaseConnectionRequest.class))
+            ) DatabaseConnectionRequest request) {
 
         // Convert DTO to domain model using DtoMapper (proper mapstruct mapper)
         DatabaseConnectionInfo connectionInfo = dtoMapper.toDomainModel(request);
@@ -78,8 +96,8 @@ public class ConnectionController {
             response.setConnectionId(connectionId); // Use the ID from the connector
             response.setDatabaseProductName(productName);
             response.setDatabaseProductVersion(productVersion);
-            response.setStatus("CONNECTED");
-
+            response.setStatus("CONNECTED"); // Changed back to "CONNECTED" as we've overridden isSuccess()
+            
             return ResponseEntity.ok(response);
 
         } catch (DatabaseConnectionException | SQLException e) {
@@ -98,6 +116,11 @@ public class ConnectionController {
     @Operation(
         summary = "List all database connections",
         description = "Returns a list of all active database connections"
+    )
+    @ApiResponse(
+        responseCode = "200", 
+        description = "List of connections retrieved successfully",
+        content = @Content(mediaType = "application/json", schema = @Schema(implementation = ConnectionResponse.class))
     )
     public ResponseEntity<List<ConnectionResponse>> listConnections() {
         // Get all connections from the repository
@@ -142,9 +165,15 @@ public class ConnectionController {
         summary = "Get connection details",
         description = "Returns details for a specific database connection"
     )
-    @ApiResponse(responseCode = "200", description = "Connection found")
+    @ApiResponse(
+        responseCode = "200", 
+        description = "Connection found",
+        content = @Content(mediaType = "application/json", schema = @Schema(implementation = ConnectionResponse.class))
+    )
     @ApiResponse(responseCode = "404", description = "Connection not found")
-    public ResponseEntity<ConnectionResponse> getConnection(@PathVariable UUID connectionId) {
+    public ResponseEntity<ConnectionResponse> getConnection(
+            @Parameter(description = "ID of the connection", required = true)
+            @PathVariable UUID connectionId) {
         DatabaseConnectionInfo connectionInfo = connectionRepository.findById(connectionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Connection not found: " + connectionId));
         
@@ -183,9 +212,15 @@ public class ConnectionController {
         summary = "Get database metadata",
         description = "Returns the schema information for the specified database connection"
     )
-    @ApiResponse(responseCode = "200", description = "Metadata retrieved successfully")
+    @ApiResponse(
+        responseCode = "200", 
+        description = "Metadata retrieved successfully",
+        content = @Content(mediaType = "application/json", schema = @Schema(implementation = SchemaInfoDTO.class))
+    )
     @ApiResponse(responseCode = "404", description = "Connection not found")
-    public ResponseEntity<SchemaInfo> getDatabaseMetadata(@PathVariable UUID connectionId) {
+    public ResponseEntity<SchemaInfoDTO> getDatabaseMetadata(
+            @Parameter(description = "ID of the connection", required = true)
+            @PathVariable UUID connectionId) {
         // Verify connection exists before trying to get a connection object
         if (!connectionRepository.existsById(connectionId)) {
              throw new ResourceNotFoundException("Connection not found: " + connectionId);
@@ -203,28 +238,115 @@ public class ConnectionController {
             // Extract metadata
             SchemaInfo schemaInfo = metadataExtractor.extractMetadata(connection);
             
-            // Log some information about what was extracted
-            if (schemaInfo != null) {
-                int tableCount = schemaInfo.getTables() != null ? schemaInfo.getTables().size() : 0;
-                int relationshipCount = 0;
-                if (schemaInfo.getTables() != null) {
-                    for (var table : schemaInfo.getTables()) {
-                        int imported = table.getImportedRelationships() != null ? table.getImportedRelationships().size() : 0;
-                        int exported = table.getExportedRelationships() != null ? table.getExportedRelationships().size() : 0;
-                        relationshipCount += imported + exported;
+            // Create DTO with complete information
+            SchemaInfoDTO schemaInfoDTO = new SchemaInfoDTO();
+            schemaInfoDTO.setStatus("SUCCESS");
+            schemaInfoDTO.setCatalogName(schemaInfo.getCatalogName());
+            schemaInfoDTO.setSchemaName(schemaInfo.getSchemaName());
+            
+            // Calculate totals for summary information
+            int totalTableCount = 0;
+            int totalColumnCount = 0;
+            int totalRelationshipCount = 0;
+            
+            // Process tables
+            if (schemaInfo.getTables() != null) {
+                totalTableCount = schemaInfo.getTables().size();
+                List<SchemaInfoDTO.TableInfoDTO> tableDTOs = new ArrayList<>();
+                
+                for (TableInfo table : schemaInfo.getTables()) {
+                    SchemaInfoDTO.TableInfoDTO tableDTO = new SchemaInfoDTO.TableInfoDTO();
+                    tableDTO.setName(table.getTableName());
+                    tableDTO.setType(table.getTableType());
+                    tableDTO.setComments(table.getRemarks()); // Add table comments
+                    
+                    // Process columns
+                    if (table.getColumns() != null) {
+                        List<SchemaInfoDTO.ColumnInfoDTO> columnDTOs = new ArrayList<>();
+                        for (ColumnInfo column : table.getColumns()) {
+                            SchemaInfoDTO.ColumnInfoDTO columnDTO = new SchemaInfoDTO.ColumnInfoDTO();
+                            columnDTO.setName(column.getColumnName());
+                            columnDTO.setType(column.getDatabaseTypeName());
+                            columnDTO.setComments(column.getComments()); // Add column comments
+                            columnDTO.setSize(column.getSize() != null ? column.getSize() : 0);
+                            columnDTO.setDecimalDigits(column.getScale() != null ? column.getScale() : 0);
+                            columnDTO.setNullable(column.isNullable());
+                            columnDTO.setPrimaryKey(column.isPrimaryKey());
+                            // Determine if column is a foreign key based on relationships
+                            boolean isForeignKey = false;
+                            if (table.getImportedRelationships() != null) {
+                                for (RelationshipInfo rel : table.getImportedRelationships()) {
+                                    if (rel.getTargetColumn() != null && 
+                                        rel.getTargetColumn().getColumnName().equals(column.getColumnName())) {
+                                        isForeignKey = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            columnDTO.setForeignKey(isForeignKey);
+                            columnDTOs.add(columnDTO);
+                        }
+                        tableDTO.setColumns(columnDTOs);
+                        totalColumnCount += table.getColumns().size();
                     }
+                    
+                    // Process imported relationships
+                    if (table.getImportedRelationships() != null) {
+                        List<SchemaInfoDTO.RelationshipDTO> importedRelDTOs = new ArrayList<>();
+                        for (RelationshipInfo rel : table.getImportedRelationships()) {
+                            if (rel.getSourceTable() != null && rel.getTargetTable() != null &&
+                                rel.getSourceColumn() != null && rel.getTargetColumn() != null) {
+                                SchemaInfoDTO.RelationshipDTO relDTO = new SchemaInfoDTO.RelationshipDTO();
+                                relDTO.setPkTable(rel.getSourceTable().getTableName());
+                                relDTO.setFkTable(rel.getTargetTable().getTableName());
+                                relDTO.setPkColumn(rel.getSourceColumn().getColumnName());
+                                relDTO.setFkColumn(rel.getTargetColumn().getColumnName());
+                                importedRelDTOs.add(relDTO);
+                            }
+                        }
+                        tableDTO.setImportedRelationships(importedRelDTOs);
+                        totalRelationshipCount += table.getImportedRelationships().size();
+                    }
+                    
+                    // Process exported relationships
+                    if (table.getExportedRelationships() != null) {
+                        List<SchemaInfoDTO.RelationshipDTO> exportedRelDTOs = new ArrayList<>();
+                        for (RelationshipInfo rel : table.getExportedRelationships()) {
+                            if (rel.getSourceTable() != null && rel.getTargetTable() != null &&
+                                rel.getSourceColumn() != null && rel.getTargetColumn() != null) {
+                                SchemaInfoDTO.RelationshipDTO relDTO = new SchemaInfoDTO.RelationshipDTO();
+                                relDTO.setPkTable(rel.getSourceTable().getTableName());
+                                relDTO.setFkTable(rel.getTargetTable().getTableName());
+                                relDTO.setPkColumn(rel.getSourceColumn().getColumnName());
+                                relDTO.setFkColumn(rel.getTargetColumn().getColumnName());
+                                exportedRelDTOs.add(relDTO);
+                            }
+                        }
+                        tableDTO.setExportedRelationships(exportedRelDTOs);
+                        totalRelationshipCount += table.getExportedRelationships().size();
+                    }
+                    
+                    tableDTOs.add(tableDTO);
                 }
                 
-                // Log structured information to help with debugging
-                System.out.println("Database Type: " + dbType);
-                System.out.println("Database Version: " + dbVersion);
-                System.out.println("Catalog: " + catalog);
-                System.out.println("Schema: " + schema);
-                System.out.println("Tables found: " + tableCount);
-                System.out.println("Relationships found: " + relationshipCount);
+                schemaInfoDTO.setTables(tableDTOs);
             }
             
-            return ResponseEntity.ok(schemaInfo);
+            // Set summary totals
+            schemaInfoDTO.setTotalTableCount(totalTableCount);
+            schemaInfoDTO.setTotalColumnCount(totalColumnCount);
+            schemaInfoDTO.setTotalRelationshipCount(totalRelationshipCount);
+            
+            // Log structured information to help with debugging
+            System.out.println("Database Type: " + dbType);
+            System.out.println("Database Version: " + dbVersion);
+            System.out.println("Catalog: " + catalog);
+            System.out.println("Schema: " + schema);
+            System.out.println("Tables found: " + totalTableCount);
+            System.out.println("Columns found: " + totalColumnCount);
+            System.out.println("Relationships found: " + totalRelationshipCount);
+            
+            return ResponseEntity.ok(schemaInfoDTO);
         } catch (SQLException e) {
             throw new DatabaseConnectionException("Failed to connect to database: " + e.getMessage(), e);
         }
@@ -240,7 +362,9 @@ public class ConnectionController {
     )
     @ApiResponse(responseCode = "204", description = "Connection closed successfully")
     @ApiResponse(responseCode = "404", description = "Connection not found")
-    public ResponseEntity<Void> closeConnection(@PathVariable UUID connectionId) {
+    public ResponseEntity<Void> closeConnection(
+            @Parameter(description = "ID of the connection to close", required = true)
+            @PathVariable UUID connectionId) {
         if (!connectionRepository.existsById(connectionId)) {
             throw new ResourceNotFoundException("Connection not found: " + connectionId);
         }

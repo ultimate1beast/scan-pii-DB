@@ -117,6 +117,14 @@
                 <version>${mockito.version}</version>
                 <scope>test</scope>
             </dependency>
+            
+            <!-- Exclude commons-logging to prevent conflict with Spring's jcl-over-slf4j -->
+            <dependency>
+                <groupId>commons-logging</groupId>
+                <artifactId>commons-logging</artifactId>
+                <version>1.2</version>
+                <scope>provided</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

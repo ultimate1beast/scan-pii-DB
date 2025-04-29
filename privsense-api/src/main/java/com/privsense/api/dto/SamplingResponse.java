@@ -1,21 +1,24 @@
 package com.privsense.api.dto;
 
+import com.privsense.api.dto.base.BaseResponseDTO;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.util.List;
 import java.util.Map;
 
 /**
- * DTO for sampling operation response.
+ * DTO pour les réponses d'échantillonnage.
  */
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SamplingResponse {
+@EqualsAndHashCode(callSuper = true)
+public class SamplingResponse extends BaseResponseDTO {
     
     private String tableName;
     private String columnName;
@@ -27,21 +30,7 @@ public class SamplingResponse {
     private double nonNullPercentage;
     private Double entropy;
     private boolean entropyCalculated;
+    private List<String> sampleValues;
     private long samplingTimeMs;
     private Map<String, Long> valueDistribution;
-    private List<Object> sampleValues;
-    
-    /**
-     * Additional metadata about the sampling operation.
-     */
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class ConfigurationInfo {
-        private int defaultSampleSize;
-        private int maxConcurrentQueries;
-        private List<String> availableSamplingMethods;
-        private String defaultSamplingMethod;
-    }
 }

@@ -1,15 +1,12 @@
 package com.privsense.core.model;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -21,6 +18,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Final output of the PII scanning process, containing all findings and metadata.
@@ -32,10 +30,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @Entity
 @Table(name = "compliance_reports")
-@JsonIdentityInfo(
-    generator = ObjectIdGenerators.PropertyGenerator.class,
-    property = "scanId"
-)
 public class ComplianceReport {
     
     /**
@@ -81,10 +75,10 @@ public class ComplianceReport {
      * Detailed results of PII detection.
      */
     @OneToMany(mappedBy = "report", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonManagedReference
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private List<DetectionResult> detectionResults;
+    @Builder.Default
+    private List<DetectionResult> detectionResults = new ArrayList<>();
     
     /**
      * Timestamp when the report was generated.
@@ -135,6 +129,12 @@ public class ComplianceReport {
     private int totalPiiColumnsFound;
     
     /**
+     * Total number of quasi-identifier columns found
+     */
+    @Column(name = "total_qi_columns_found")
+    private int totalQuasiIdentifierColumnsFound;
+    
+    /**
      * Scan start time
      */
     @Column(name = "scan_start_time")
@@ -157,6 +157,71 @@ public class ComplianceReport {
      */
     @Transient
     private List<DetectionResult> piiFindings;
+    
+    /**
+     * Quasi-identifier findings (columns identified as quasi-identifiers)
+     */
+    @Transient
+    private List<DetectionResult> quasiIdentifierFindings;
+
+    /**
+     * Update the scan duration based on start and end times.
+     * This method should be called after setting scan start or end times.
+     */
+    private void updateScanDuration() {
+        if (scanStartTime != null && scanEndTime != null) {
+            scanDuration = Duration.between(scanStartTime, scanEndTime);
+        }
+    }
+
+    /**
+     * Set the detection results with proper bidirectional relationship management.
+     * 
+     * @param detectionResults The detection results to set
+     */
+    public void setDetectionResults(List<DetectionResult> detectionResults) {
+        this.detectionResults = detectionResults;
+        
+        // Update bidirectional relationship
+        if (detectionResults != null) {
+            for (DetectionResult result : detectionResults) {
+                result.setReport(this);
+            }
+        }
+    }
+    
+    /**
+     * Add a detection result with proper bidirectional relationship management.
+     * 
+     * @param result The result to add
+     */
+    public void addDetectionResult(DetectionResult result) {
+        if (this.detectionResults == null) {
+            this.detectionResults = new ArrayList<>();
+        }
+        this.detectionResults.add(result);
+        result.setReport(this);
+    }
+
+    /**
+     * Set the scan start time and update the scan duration.
+     * 
+     * @param scanStartTime The scan start time to set
+     */
+    public void setScanStartTime(Instant scanStartTime) {
+        this.scanStartTime = scanStartTime;
+        updateScanDuration();
+    }
+
+    /**
+     * Set the scan end time and update the scan duration.
+     * 
+     * @param scanEndTime The scan end time to set
+     */
+    public void setScanEndTime(Instant scanEndTime) {
+        this.scanEndTime = scanEndTime;
+        updateScanDuration();
+    }
     
     /**
      * Returns a list of all PII findings (columns with detected PII).
@@ -184,6 +249,42 @@ public class ComplianceReport {
     }
     
     /**
+     * Returns a list of all quasi-identifier findings.
+     * 
+     * @return List of detection results identified as quasi-identifiers
+     */
+    public List<DetectionResult> getQuasiIdentifierFindings() {
+        if (quasiIdentifierFindings != null) {
+            return quasiIdentifierFindings;
+        }
+        
+        if (detectionResults == null) {
+            return new ArrayList<>();
+        }
+        
+        // Filter detection results for those that are quasi-identifiers
+        List<DetectionResult> findings = new ArrayList<>();
+        for (DetectionResult result : detectionResults) {
+            if (result.hasQuasiIdentifierRisk()) {
+                findings.add(result);
+            }
+        }
+        
+        return findings;
+    }
+    
+    /**
+     * Returns a sorted list of quasi-identifier findings, ordered by risk score (highest first).
+     * 
+     * @return Sorted list of quasi-identifier findings
+     */
+    public List<DetectionResult> getSortedQuasiIdentifierFindings() {
+        List<DetectionResult> findings = getQuasiIdentifierFindings();
+        findings.sort(Comparator.comparing(DetectionResult::getQuasiIdentifierRiskScore).reversed());
+        return findings;
+    }
+    
+    /**
      * Returns a sorted list of PII findings, ordered by confidence score (highest first).
      * 
      * @return Sorted list of PII findings
@@ -192,6 +293,28 @@ public class ComplianceReport {
         List<DetectionResult> findings = getPiiFindings();
         findings.sort(Comparator.comparing(DetectionResult::getHighestConfidenceScore).reversed());
         return findings;
+    }
+    
+    /**
+     * Get a map of correlated columns grouped by quasi-identifier type
+     * 
+     * @return Map of quasi-identifier type to list of column groups
+     */
+    public Map<String, List<List<String>>> getCorrelatedColumnGroups() {
+        return getQuasiIdentifierFindings().stream()
+            .filter(result -> result.getCorrelatedColumns() != null && !result.getCorrelatedColumns().isEmpty())
+            .collect(Collectors.groupingBy(
+                DetectionResult::getQuasiIdentifierType,
+                Collectors.mapping(
+                    result -> {
+                        List<String> group = new ArrayList<>();
+                        group.add(result.getColumnInfo().getColumnName());
+                        group.addAll(result.getCorrelatedColumns());
+                        return group;
+                    },
+                    Collectors.toList()
+                )
+            ));
     }
     
     /**
@@ -214,6 +337,9 @@ public class ComplianceReport {
         
         @Column(name = "total_pii_candidates")
         private int totalPiiCandidates;
+        
+        @Column(name = "qi_columns_found")
+        private int quasiIdentifierColumnsFound;
         
         @Column(name = "scan_duration_millis")
         private long scanDurationMillis;

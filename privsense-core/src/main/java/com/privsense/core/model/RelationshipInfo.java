@@ -1,8 +1,5 @@
 package com.privsense.core.model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,11 +21,6 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Table(name = "relationships")
-@JsonIdentityInfo(
-    generator = ObjectIdGenerators.PropertyGenerator.class,
-    property = "constraintName",
-    scope = RelationshipInfo.class
-)
 public class RelationshipInfo {
     
     @Id
@@ -36,14 +28,12 @@ public class RelationshipInfo {
     private UUID id;
     
     // Source (parent) table information
-    @JsonBackReference(value = "source-table-ref")
     @ToString.Exclude // Prevent recursion
     @EqualsAndHashCode.Exclude // Prevent recursion
     @ManyToOne
     @JoinColumn(name = "source_table_id")
     private TableInfo sourceTable;
     
-    @JsonBackReference(value = "source-column-ref")
     @ToString.Exclude // Prevent recursion
     @EqualsAndHashCode.Exclude // Prevent recursion
     @ManyToOne
@@ -51,14 +41,12 @@ public class RelationshipInfo {
     private ColumnInfo sourceColumn;
     
     // Target (child) table information
-    @JsonBackReference(value = "target-table-ref")
     @ToString.Exclude // Prevent recursion
     @EqualsAndHashCode.Exclude // Prevent recursion
     @ManyToOne
     @JoinColumn(name = "target_table_id")
     private TableInfo targetTable;
     
-    @JsonBackReference(value = "target-column-ref")
     @ToString.Exclude // Prevent recursion
     @EqualsAndHashCode.Exclude // Prevent recursion
     @ManyToOne

@@ -1,5 +1,6 @@
 package com.privsense.core.service;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -31,4 +32,11 @@ public interface ScanJobManagementService {
      * @throws IllegalStateException if the job is already completed or failed
      */
     void cancelScan(UUID jobId);
+
+    /**
+     * Gets all scan jobs in the system.
+     *
+     * @return A list of all scan jobs
+     */
+    List<Object> getAllJobs();
 }

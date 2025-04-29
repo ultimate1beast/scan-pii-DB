@@ -1,6 +1,5 @@
 package com.privsense.core.model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;
@@ -28,7 +27,6 @@ public class DetectionResult {
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "report_scan_id")
-    @JsonBackReference
     private ComplianceReport report;
     
     @OneToMany(mappedBy = "detectionResult", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -45,9 +43,27 @@ public class DetectionResult {
     @Column(name = "method_name")
     private List<String> detectionMethods;
 
+    // Quasi-identifier related fields
+    @Column(name = "is_quasi_identifier")
+    private boolean isQuasiIdentifier;
+    
+    @Column(name = "quasi_identifier_risk_score")
+    private double quasiIdentifierRiskScore;
+    
+    @Column(name = "quasi_identifier_type")
+    private String quasiIdentifierType;
+    
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "correlated_columns", joinColumns = @JoinColumn(name = "result_id"))
+    @Column(name = "correlated_column")
+    private List<String> correlatedColumns;
+
     public DetectionResult() {
         this.candidates = new ArrayList<>();
         this.detectionMethods = new ArrayList<>();
+        this.correlatedColumns = new ArrayList<>();
+        this.isQuasiIdentifier = false;
+        this.quasiIdentifierRiskScore = 0.0;
     }
 
     public DetectionResult(ColumnInfo columnInfo) {
@@ -122,11 +138,60 @@ public class DetectionResult {
         return detectionMethods;
     }
 
+    // Quasi-identifier getters and setters
+    public boolean isQuasiIdentifier() {
+        return isQuasiIdentifier;
+    }
+
+    public void setQuasiIdentifier(boolean quasiIdentifier) {
+        isQuasiIdentifier = quasiIdentifier;
+    }
+
+    public double getQuasiIdentifierRiskScore() {
+        return quasiIdentifierRiskScore;
+    }
+
+    public void setQuasiIdentifierRiskScore(double quasiIdentifierRiskScore) {
+        this.quasiIdentifierRiskScore = quasiIdentifierRiskScore;
+    }
+
+    public String getQuasiIdentifierType() {
+        return quasiIdentifierType;
+    }
+
+    public void setQuasiIdentifierType(String quasiIdentifierType) {
+        this.quasiIdentifierType = quasiIdentifierType;
+    }
+
+    public List<String> getCorrelatedColumns() {
+        return correlatedColumns;
+    }
+
+    public void setCorrelatedColumns(List<String> correlatedColumns) {
+        this.correlatedColumns = correlatedColumns;
+    }
+
+    public void addCorrelatedColumn(String columnName) {
+        if (this.correlatedColumns == null) {
+            this.correlatedColumns = new ArrayList<>();
+        }
+        if (!this.correlatedColumns.contains(columnName)) {
+            this.correlatedColumns.add(columnName);
+        }
+    }
+
     /**
      * @return true if any PII candidates were found, false otherwise
      */
     public boolean hasPii() {
         return candidates != null && !candidates.isEmpty();
+    }
+
+    /**
+     * @return true if this column is a quasi-identifier or part of one, false otherwise
+     */
+    public boolean hasQuasiIdentifierRisk() {
+        return isQuasiIdentifier || quasiIdentifierRiskScore > 0;
     }
 
     private void updateHighestConfidence() {
@@ -168,6 +233,10 @@ public class DetectionResult {
                 ", highestConfidencePiiType='" + highestConfidencePiiType + '\'' +
                 ", highestConfidenceScore=" + highestConfidenceScore +
                 ", detectionMethods=" + detectionMethods +
+                ", isQuasiIdentifier=" + isQuasiIdentifier +
+                ", quasiIdentifierRiskScore=" + quasiIdentifierRiskScore +
+                ", quasiIdentifierType='" + quasiIdentifierType + '\'' +
+                ", correlatedColumns=" + correlatedColumns +
                 ", candidatesCount=" + (candidates != null ? candidates.size() : 0) +
                 '}';
     }

@@ -7,10 +7,10 @@ import com.privsense.core.model.ColumnInfo;
 import com.privsense.core.model.PiiCandidate;
 import com.privsense.core.model.SampleData;
 import com.privsense.core.service.PiiDetectionStrategy;
+import com.privsense.core.config.PrivSenseConfigProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -38,20 +38,13 @@ public class NerClientStrategy implements PiiDetectionStrategy {
     
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
+    private final PrivSenseConfigProperties configProperties;
     
-    @Value("${privsense.ner.service.url:http://localhost:5000/detect-pii}")
+    // Configuration properties from PrivSenseConfigProperties
     private String nerServiceUrl;
-    
-    @Value("${privsense.ner.service.timeout:5000}")
     private int requestTimeoutMs;
-    
-    @Value("${privsense.ner.service.max-samples:10}")
     private int maxSamples;
-    
-    @Value("${privsense.ner.service.retry-attempts:2}")
     private int retryAttempts;
-    
-    @Value("${privsense.ner.service.enabled:true}")
     private boolean nerServiceEnabled;
     
     private boolean serviceAvailable = true;
@@ -60,13 +53,21 @@ public class NerClientStrategy implements PiiDetectionStrategy {
      * Constructor with dependency injection
      */
     @Autowired
-    public NerClientStrategy(WebClient.Builder webClientBuilder, ObjectMapper objectMapper) {
+    public NerClientStrategy(WebClient.Builder webClientBuilder, ObjectMapper objectMapper, PrivSenseConfigProperties configProperties) {
         this.webClient = webClientBuilder.build();
         this.objectMapper = objectMapper;
+        this.configProperties = configProperties;
     }
     
     @PostConstruct
     public void init() {
+        // Extract configuration from the centralized PrivSenseConfigProperties
+        this.nerServiceUrl = configProperties.getNer().getService().getUrl();
+        this.requestTimeoutMs = configProperties.getNer().getService().getTimeoutSeconds() * 1000;
+        this.maxSamples = configProperties.getNer().getService().getMaxSamples();
+        this.retryAttempts = configProperties.getNer().getService().getRetryAttempts();
+        this.nerServiceEnabled = configProperties.getNer().getService().getCircuitBreaker().isEnabled();
+        
         logger.info("Initialized NerClientStrategy with service URL: {}, enabled: {}", nerServiceUrl, nerServiceEnabled);
         
         // Test connection to NER service on startup

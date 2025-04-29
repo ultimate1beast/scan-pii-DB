@@ -44,4 +44,15 @@ public class DetectionConfig {
      * Whether to enable entropy calculation during PII detection.
      */
     private Boolean entropyCalculationEnabled;
+    
+    /**
+     * Whether to enable quasi-identifier detection.
+     */
+    private Boolean quasiIdentifierEnabled;
+    
+    /**
+     * Configuration settings for quasi-identifier detection.
+     */
+    @Builder.Default
+    private QuasiIdentifierConfig quasiIdentifier = new QuasiIdentifierConfig();
 }

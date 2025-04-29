@@ -9,6 +9,9 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Unified configuration properties for PrivSense application.
  * Binds properties prefixed with "privsense" from application.yml/properties.
@@ -42,9 +45,40 @@ public class PrivSenseConfigProperties {
         private double heuristicThreshold = 0.7;
         private double regexThreshold = 0.8;
         private double nerThreshold = 0.6;
+        private double quasiIdentifierThreshold = 0.65;
         private double reportingThreshold = 0.5;
         private boolean stopPipelineOnHighConfidence = true;
         private boolean entropyEnabled = false;
+        private boolean quasiIdentifierEnabled = true;
+        
+        @Valid
+        private QuasiIdentifier quasiIdentifier = new QuasiIdentifier();
+        
+        @Data
+        public static class QuasiIdentifier {
+            private double confidenceThreshold = 0.65;
+            private double maxDistinctValueRatio = 0.8;
+            private int minDistinctValueCount = 3;
+            private boolean correlationAnalysisEnabled = true;
+            private double minCorrelationCoefficient = 0.7;
+            private int maxCorrelationColumnsToAnalyze = 100;
+            private double lowCardinalityThreshold = 0.05;
+            private double highCardinalityThreshold = 0.8;
+            
+            private List<String> commonQuasiIdentifiers = Arrays.asList(
+                "zip", "zip_code", "postal_code", "post_code", 
+                "gender", "sex", 
+                "birth_date", "date_of_birth", "dob",
+                "age", "year_of_birth", "yob",
+                "race", "ethnicity",
+                "marital_status", "marriage_status",
+                "income", "salary",
+                "education", "education_level",
+                "occupation", "job_title", "profession",
+                "city", "state", "region", "province",
+                "country", "nationality"
+            );
+        }
     }
     
     /**
@@ -79,6 +113,12 @@ public class PrivSenseConfigProperties {
             
             @Min(1)
             private int timeoutSeconds = 30;
+            
+            @Min(1)
+            private int maxSamples = 10;
+            
+            @Min(0)
+            private int retryAttempts = 2;
             
             @Valid
             private CircuitBreaker circuitBreaker = new CircuitBreaker();

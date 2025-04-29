@@ -27,6 +27,16 @@ public interface ComplianceReportRepository {
     Optional<ComplianceReport> findByScanId(UUID scanId);
     
     /**
+     * Find a compliance report by scan ID with detection results eagerly loaded.
+     * This prevents LazyInitializationException when accessing detection results
+     * outside of a transaction.
+     *
+     * @param scanId The scan ID
+     * @return Optional containing the compliance report with detection results if found
+     */
+    Optional<ComplianceReport> findByScanIdWithDetectionResults(UUID scanId);
+    
+    /**
      * Delete a compliance report by ID.
      *
      * @param id The ID of the report to delete

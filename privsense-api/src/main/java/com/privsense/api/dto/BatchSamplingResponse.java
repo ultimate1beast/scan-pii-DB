@@ -1,21 +1,25 @@
 package com.privsense.api.dto;
 
+import com.privsense.api.dto.base.BaseResponseDTO;
+import com.privsense.api.dto.result.TableSamplingResult;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.util.List;
-import java.util.Map;
 
 /**
- * Response DTO for batch sampling operation across multiple tables.
+ * DTO de réponse pour les opérations d'échantillonnage par lots sur plusieurs tables.
+ * Les classes internes ont été extraites dans des fichiers séparés pour améliorer la modularité.
  */
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BatchSamplingResponse {
+@EqualsAndHashCode(callSuper = true)
+public class BatchSamplingResponse extends BaseResponseDTO {
     
     private int totalTablesProcessed;
     private int totalColumnsProcessed;
@@ -24,48 +28,10 @@ public class BatchSamplingResponse {
     private List<TableSamplingResult> results;
     
     /**
-     * Results for a single table's sampling operation.
+     * Métriques de performance pour l'opération par lots.
      */
     @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class TableSamplingResult {
-        private String tableName;
-        private int columnCount;
-        private long samplingTimeMs;
-        private Map<String, ColumnSamplingResult> columnResults;
-        private String status; // SUCCESS, PARTIAL_SUCCESS, FAILED
-        private String errorMessage; // Only populated if status is FAILED or PARTIAL_SUCCESS
-    }
-    
-    /**
-     * Results for a single column's sampling operation.
-     */
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class ColumnSamplingResult {
-        private String columnName;
-        private int sampleSize;
-        private String samplingMethod;
-        private int actualRowCount;
-        private int nullCount;
-        private double nullPercentage;
-        private double nonNullPercentage;
-        private Double entropy;
-        private boolean entropyCalculated;
-        private Map<String, Long> topValues; // Top N most common values and their counts
-        private String status; // SUCCESS or FAILED
-        private String errorMessage;
-    }
-    
-    /**
-     * Performance and execution metrics for the batch operation.
-     */
-    @Data
-    @Builder
+    @SuperBuilder
     @NoArgsConstructor
     @AllArgsConstructor
     public static class PerformanceMetrics {

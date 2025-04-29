@@ -1,9 +1,13 @@
 package com.privsense.api.dto;
 
+import com.privsense.api.dto.base.BaseResponseDTO;
+import com.privsense.api.dto.result.DetectionResultDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -13,14 +17,15 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Data Transfer Object for ComplianceReport to avoid LazyInitializationException
- * when serializing the report to JSON.
+ * Data Transfer Object pour ComplianceReport pour éviter LazyInitializationException
+ * et les références circulaires lors de la sérialisation du rapport en JSON.
  */
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ComplianceReportDTO {
+@EqualsAndHashCode(callSuper = true)
+public class ComplianceReportDTO extends BaseResponseDTO {
 
     // Core metadata
     private UUID scanId;
@@ -36,6 +41,7 @@ public class ComplianceReportDTO {
     private int totalTablesScanned;
     private int totalColumnsScanned;
     private int totalPiiColumnsFound;
+    private int totalQuasiIdentifierColumnsFound;
     private Instant scanStartTime;
     private Instant scanEndTime;
     private Duration scanDuration;
@@ -44,31 +50,25 @@ public class ComplianceReportDTO {
     private Map<String, Object> samplingConfig;
     private Map<String, Object> detectionConfig;
     
-    // PII findings
-    @Builder.Default
-    private List<PiiColumnDTO> piiFindings = new ArrayList<>();
+    // Summary data
+    private ScanSummaryDTO summary;
     
-    /**
-     * DTO representing a column containing PII data.
-     */
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class PiiColumnDTO {
-        private String tableName;
-        private String columnName;
-        private String dataType;
-        private String piiType;
-        private double confidenceScore;
-        private List<String> detectionMethods;
-    }
+    // PII findings - using DetectionResultDTO to break circular references
+    @Builder.Default
+    private List<DetectionResultDTO> piiFindings = new ArrayList<>();
+    
+    // Quasi-identifier findings
+    @Builder.Default
+    private List<DetectionResultDTO> quasiIdentifierFindings = new ArrayList<>();
+    
+    // Correlated column groups by quasi-identifier type
+    private Map<String, List<List<String>>> correlatedColumnGroups;
     
     /**
      * Inner class for scan summary statistics
      */
     @Data
-    @Builder
+    @SuperBuilder
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ScanSummaryDTO {
@@ -76,6 +76,7 @@ public class ComplianceReportDTO {
         private int columnsScanned;
         private int piiColumnsFound;
         private int totalPiiCandidates;
+        private int quasiIdentifierColumnsFound;
         private long scanDurationMillis;
     }
 }

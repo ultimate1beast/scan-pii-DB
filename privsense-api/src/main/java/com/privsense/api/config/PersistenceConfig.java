@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  * Configures entity scanning, repository scanning, and transaction management.
  */
 @Configuration
-@EnableJpaRepositories(basePackages = {"com.privsense.api.repository", "com.privsense.core.repository"})
+@EnableJpaRepositories(basePackages = {"com.privsense.api.repository", "com.privsense.api.repository.jpa", "com.privsense.core.repository"})
 @EntityScan(basePackages = {"com.privsense.api.model", "com.privsense.core.model", "com.privsense.db.model"})
 @EnableTransactionManagement
 public class PersistenceConfig {

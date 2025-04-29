@@ -1,9 +1,5 @@
 package com.privsense.core.model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,10 +21,6 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Table(name = "tables")
-@JsonIdentityInfo(
-    generator = ObjectIdGenerators.PropertyGenerator.class,
-    property = "tableName"
-)
 public class TableInfo {
     
     @Id
@@ -45,7 +37,6 @@ public class TableInfo {
     private String remarks; // Comments/descriptions for the table
     
     @Builder.Default
-    @JsonManagedReference
     @ToString.Exclude // Prevent recursion in toString
     @EqualsAndHashCode.Exclude // Prevent recursion
     @OneToMany(mappedBy = "table", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -63,7 +54,6 @@ public class TableInfo {
     @OneToMany(mappedBy = "sourceTable", cascade = CascadeType.ALL)
     private List<RelationshipInfo> exportedRelationships = new ArrayList<>(); // Foreign keys that reference this table
     
-    @JsonBackReference
     @ToString.Exclude // Prevent recursion in toString
     @EqualsAndHashCode.Exclude // Prevent recursion
     @ManyToOne

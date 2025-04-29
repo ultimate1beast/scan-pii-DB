@@ -1,8 +1,5 @@
 package com.privsense.core.model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,10 +20,6 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Table(name = "columns")
-@JsonIdentityInfo(
-    generator = ObjectIdGenerators.PropertyGenerator.class, 
-    property = "columnName"
-)
 public class ColumnInfo {
     
     @Id
@@ -60,7 +53,6 @@ public class ColumnInfo {
     @Column(name = "primary_key")
     private boolean primaryKey;
     
-    @JsonBackReference
     @ToString.Exclude // Prevent recursion in toString
     @EqualsAndHashCode.Exclude // Prevent recursion
     @ManyToOne
