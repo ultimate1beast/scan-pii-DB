@@ -53,4 +53,11 @@ public interface DatabaseConnector {
      * @return The connection information with sensitive data masked
      */
     DatabaseConnectionInfo getConnectionInfo(UUID connectionId);
+    
+    /**
+     * Gets the count of active database connections.
+     * 
+     * @return The number of currently active database connections
+     */
+    int getActiveConnectionCount();
 }

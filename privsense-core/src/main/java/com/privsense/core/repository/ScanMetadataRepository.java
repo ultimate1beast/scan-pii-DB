@@ -2,6 +2,7 @@ package com.privsense.core.repository;
 
 import com.privsense.core.model.ScanMetadata;
 
+import org.springframework.data.domain.Pageable;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -34,6 +35,26 @@ public interface ScanMetadataRepository {
      * @return List of all scan metadata entities
      */
     List<ScanMetadata> findAll();
+    
+    /**
+     * Find all scan metadata with pagination support.
+     *
+     * @param pageable The pagination information
+     * @return A paginated list of scan metadata entities
+     */
+    List<ScanMetadata> findAllPaged(Pageable pageable);
+    
+    /**
+     * Count all scan metadata entities.
+     *
+     * @return The total count of scan metadata records
+     */
+    long count();
+    
+    /**
+     * Ensure all pending changes are written to the database.
+     */
+    void flush();
     
     /**
      * Find all scans for a specific connection.

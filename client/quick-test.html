@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrivSense WebSocket Monitor</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 900px; 
+            margin: 20px auto; 
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 10px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; text-align: center; margin-bottom: 30px; }
+        
+        .status { 
+            padding: 15px; 
+            margin: 15px 0; 
+            border-radius: 5px; 
+            font-weight: bold;
+            text-align: center;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        .warning { background-color: #fff3cd; color: #856404; }
+        
+        .monitor-form {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border: 1px solid #dee2e6;
+        }
+        
+        .form-group {
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        label {
+            font-weight: bold;
+            color: #495057;
+            min-width: 80px;
+        }
+        
+        input[type="text"] {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        button { 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 5px; 
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+        }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-success { background-color: #28a745; color: white; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        .btn-warning { background-color: #ffc107; color: #212529; }
+        
+        .scan-status {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .stat-box {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+        }
+        
+        .progress-container {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border: 1px solid #dee2e6;
+            display: none;
+        }
+        
+        .progress-bar-container {
+            background-color: #e9ecef;
+            height: 25px;
+            border-radius: 12px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
+        .phase-indicator {
+            background-color: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #ffc107;
+            display: none;
+        }
+        
+        .phase-indicator.active {
+            display: block;
+        }
+        
+        .phase-indicator.completed {
+            background-color: #d4edda;
+            border-left-color: #28a745;
+        }
+        
+        .phase-indicator.failed {
+            background-color: #f8d7da;
+            border-left-color: #dc3545;
+        }
+        
+        .phase-progress {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+            display: none;
+        }
+        
+        .phase-progress.active {
+            display: grid;
+        }
+        
+        .phase-step {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            border: 2px solid #dee2e6;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .phase-step.pending {
+            background-color: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+        
+        .phase-step.active {
+            background-color: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+            font-weight: bold;
+            transform: scale(1.05);
+        }
+        
+        .phase-step.completed {
+            background-color: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        
+        .phase-step.failed {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        
+        .log { 
+            background-color: #f8f9fa; 
+            padding: 15px; 
+            margin: 15px 0; 
+            border-radius: 5px; 
+            height: 400px; 
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            border: 1px solid #dee2e6;
+        }
+        .log-entry { margin: 5px 0; padding: 2px 0; }
+        .log-success { color: #28a745; font-weight: bold; }
+        .log-error { color: #dc3545; font-weight: bold; }
+        .log-info { color: #17a2b8; }
+        .log-warning { color: #856404; font-weight: bold; }
+        .log-progress { color: #6f42c1; font-weight: bold; }
+        .log-pii { color: #fd7e14; font-weight: bold; }
+        .log-phase { color: #e83e8c; font-weight: bold; font-size: 13px; }
+        
+        .instructions {
+            background-color: #e7f3ff;
+            border: 1px solid #0066cc;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        
+        .active-scans {
+            background-color: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border: 1px solid #ffc107;
+        }
+        
+        .scan-item {
+            background-color: white;
+            padding: 15px;
+            margin: 8px 0;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .scan-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .scan-item-details {
+            font-size: 12px;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📡 PrivSense Scan Monitor</h1>
+        
+        <div id="connection-status" class="status info">
+            🔌 Ready to connect
+        </div>
+        
+        <div class="monitor-form">
+            <h3>🎯 WebSocket Monitor Controls</h3>
+            <div style="display: flex; gap: 10px; margin: 15px 0;">
+                <button id="connect-btn" class="btn-success">
+                    🔌 Connect WebSocket
+                </button>
+                <button id="disconnect-btn" class="btn-danger" disabled>
+                    ❌ Disconnect
+                </button>
+                <button id="clear-log-btn" class="btn-warning">
+                    🗑️ Clear Log
+                </button>
+            </div>
+            
+            <div class="form-group">
+                <label for="job-id">Job ID:</label>
+                <input type="text" id="job-id" placeholder="Enter scan job ID to monitor specific scan">
+                <button id="monitor-btn" class="btn-primary" disabled>
+                    👁️ Monitor This Job
+                </button>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h4>📋 How to Use:</h4>
+            <ol>
+                <li><strong>Click "Connect WebSocket"</strong> - Establishes connection to PrivSense</li>
+                <li><strong>Start a scan manually</strong> via Swagger UI at: <code>http://localhost:8080/privsense/swagger-ui.html</code></li>
+                <li><strong>Copy the Job ID</strong> from the scan response</li>
+                <li><strong>Paste Job ID above</strong> and click "Monitor This Job"</li>
+                <li><strong>Watch real-time progress</strong> in the log below!</li>
+            </ol>
+        </div>
+        
+        <div class="scan-status">
+            <div class="stat-box">
+                <div class="stat-value" id="active-connections">0</div>
+                <div class="stat-label">WebSocket Connections</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="monitored-scans">0</div>
+                <div class="stat-label">Monitored Scans</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="pii-detections">0</div>
+                <div class="stat-label">PII Detections</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="qi-detections">0</div>
+                <div class="stat-label">QI Detections</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="columns-scanned">0</div>
+                <div class="stat-label">Columns Scanned</div>
+            </div>
+        </div>
+        
+        <div class="progress-container" id="progress-container">
+            <h4>📊 Scan Progress</h4>
+            <div class="progress-bar-container">
+                <div id="progress-bar" class="progress-bar" style="width: 0%;">0%</div>
+            </div>
+            <div id="progress-details">Ready to monitor...</div>
+        </div>
+        
+        <div class="phase-indicator" id="phase-indicator">
+            <h4 id="phase-title">🔄 Scan Phase</h4>
+            <div id="phase-description">No active scan</div>
+        </div>
+        
+        <div class="phase-progress" id="phase-progress">
+            <div class="phase-step" id="phase-pending">
+                <div>⏳ PENDING</div>
+                <div>Waiting to start</div>
+            </div>
+            <div class="phase-step" id="phase-extracting-metadata">
+                <div>🔍 EXTRACTING_METADATA</div>
+                <div>Analyzing database structure</div>
+            </div>
+            <div class="phase-step" id="phase-sampling">
+                <div>📊 SAMPLING</div>
+                <div>Collecting data samples</div>
+            </div>
+            <div class="phase-step" id="phase-detecting-pii">
+                <div>🚨 DETECTING_PII</div>
+                <div>Scanning for PII data</div>
+            </div>
+            <div class="phase-step" id="phase-generating-report">
+                <div>📄 GENERATING_REPORT</div>
+                <div>Creating compliance report</div>
+            </div>
+            <div class="phase-step" id="phase-completed">
+                <div>✅ COMPLETED</div>
+                <div>Scan finished successfully</div>
+            </div>
+        </div>
+        
+        <div class="active-scans" id="active-scans-container" style="display: none;">
+            <h4>🔍 Currently Monitoring:</h4>
+            <div id="active-scans-list"></div>
+        </div>
+        
+        <div id="log" class="log"></div>
+    </div>
+
+    <!-- WebSocket libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7/bundles/stomp.umd.min.js"></script>
+    
+    <script>
+        // Enhanced WebSocket Monitor for PrivSense
+        class PrivSenseScanMonitor {
+            constructor() {
+                this.baseURL = 'http://localhost:8080/privsense';
+                this.client = null;
+                this.connected = false;
+                this.activeScans = new Map();
+                this.totalPiiDetections = 0;
+                this.totalQiDetections = 0;
+                this.totalColumnsScanned = 0;
+                this.currentPhase = null;
+                this.scanResults = new Map(); // Store detailed results per scan
+            }
+            
+            async connect() {
+                return new Promise((resolve, reject) => {
+                    try {
+                        const socket = new SockJS(`${this.baseURL}/websocket`);
+                        
+                        this.client = new StompJs.Client({
+                            webSocketFactory: () => socket,
+                            connectionTimeout: 15000,
+                            heartbeatIncoming: 10000,
+                            heartbeatOutgoing: 10000,
+                            
+                            onConnect: (frame) => {
+                                this.connected = true;
+                                log('✅ WebSocket connected successfully!', 'success');
+                                log('🎯 Ready to monitor scan jobs...', 'info');
+                                updateStats();
+                                resolve();
+                            },
+                            
+                            onStompError: (frame) => {
+                                const errorMsg = frame.headers['message'] || 'STOMP connection error';
+                                log(`❌ STOMP Error: ${errorMsg}`, 'error');
+                                reject(new Error(`STOMP Error: ${errorMsg}`));
+                            },
+                            
+                            onWebSocketError: (error) => {
+                                log(`❌ WebSocket Error: ${error}`, 'error');
+                                reject(new Error('WebSocket connection failed'));
+                            },
+                            
+                            onDisconnect: () => {
+                                this.connected = false;
+                                log('🔌 WebSocket disconnected', 'info');
+                                updateStats();
+                            },
+                            
+                            debug: (msg) => {
+                                if (msg.includes('PING') || msg.includes('PONG')) return;
+                                console.log('STOMP:', msg);
+                            }
+                        });
+                        
+                        this.client.activate();
+                        
+                    } catch (error) {
+                        reject(new Error(`Failed to initialize WebSocket: ${error.message}`));
+                    }
+                });
+            }
+            
+            disconnect() {
+                if (this.client && this.connected) {
+                    this.activeScans.clear();
+                    this.client.deactivate();
+                    log('👋 Disconnected from WebSocket', 'info');
+                    updateActiveScans();
+                    updateStats();
+                    hideProgress();
+                    hidePhaseProgress();
+                }
+            }
+            
+            monitorScanJob(jobId) {
+                if (!this.connected) {
+                    throw new Error('WebSocket not connected');
+                }
+                
+                if (this.activeScans.has(jobId)) {
+                    log(`⚠️ Already monitoring job: ${jobId}`, 'warning');
+                    return;
+                }
+                
+                log(`🎯 Starting to monitor job: ${jobId}`, 'info');
+                
+                const scanInfo = {
+                    jobId: jobId,
+                    startTime: new Date(),
+                    status: 'MONITORING',
+                    phase: 'PENDING',
+                    progress: 0,
+                    totalColumns: 0,
+                    currentColumn: 0,
+                    piiCount: 0,
+                    qiCount: 0,
+                    unsubscribeFunctions: []
+                };
+                
+                // Initialize detailed results tracking
+                this.scanResults.set(jobId, {
+                    piiDetections: [],
+                    qiDetections: [],
+                    qiGroups: new Map(),
+                    columnResults: new Map()
+                });
+                
+                // Subscribe to scan status updates (major phases)
+                const statusSubscription = this.client.subscribe(`/topic/scan-status/${jobId}`, (message) => {
+                    try {
+                        const data = JSON.parse(message.body);
+                        this.handleScanStatusUpdate(jobId, data);
+                    } catch (error) {
+                        log(`❌ Error parsing status message: ${error.message}`, 'error');
+                    }
+                });
+                scanInfo.unsubscribeFunctions.push(() => statusSubscription.unsubscribe());
+                
+                // Subscribe to scan progress updates (column-by-column)
+                const progressSubscription = this.client.subscribe(`/topic/scans/${jobId}/progress`, (message) => {
+                    try {
+                        const data = JSON.parse(message.body);
+                        this.handleProgressUpdate(jobId, data);
+                    } catch (error) {
+                        log(`❌ Error parsing progress message: ${error.message}`, 'error');
+                    }
+                });
+                scanInfo.unsubscribeFunctions.push(() => progressSubscription.unsubscribe());
+                
+                // Subscribe to quasi-identifier updates (NEW!)
+                const qiSubscription = this.client.subscribe(`/topic/scans/${jobId}/quasi-identifiers`, (message) => {
+                    try {
+                        const data = JSON.parse(message.body);
+                        this.handleQuasiIdentifierUpdate(jobId, data);
+                    } catch (error) {
+                        log(`❌ Error parsing QI message: ${error.message}`, 'error');
+                    }
+                });
+                scanInfo.unsubscribeFunctions.push(() => qiSubscription.unsubscribe());
+                
+                // Subscribe to final results (NEW!)
+                const resultsSubscription = this.client.subscribe(`/topic/scans/${jobId}/results`, (message) => {
+                    try {
+                        const data = JSON.parse(message.body);
+                        this.handleFinalResults(jobId, data);
+                    } catch (error) {
+                        log(`❌ Error parsing results message: ${error.message}`, 'error');
+                    }
+                });
+                scanInfo.unsubscribeFunctions.push(() => resultsSubscription.unsubscribe());
+                
+                this.activeScans.set(jobId, scanInfo);
+                showProgress();
+                showPhaseProgress();
+                updatePhaseProgress('PENDING');
+                updateActiveScans();
+                updateStats();
+                
+                log(`📡 Subscribed to topics:`, 'info');
+                log(`   • /topic/scan-status/${jobId} (scan phases)`, 'info');
+                log(`   • /topic/scans/${jobId}/progress (column progress)`, 'info');
+                log(`   • /topic/scans/${jobId}/quasi-identifiers (QI detection)`, 'info');
+                log(`   • /topic/scans/${jobId}/results (final results)`, 'info');
+            }
+            
+            handleQuasiIdentifierUpdate(jobId, data) {
+                const scanInfo = this.activeScans.get(jobId);
+                const results = this.scanResults.get(jobId);
+                
+                if (data.eventType === 'QUASI_IDENTIFIER_DETECTED') {
+                    this.totalQiDetections++;
+                    if (scanInfo) scanInfo.qiCount++;
+                    
+                    const qiInfo = {
+                        columnName: data.columnName,
+                        qiGroup: data.qiGroup || 'Unknown Group',
+                        riskScore: data.riskScore || 0,
+                        qiType: data.qiType || 'DEMOGRAPHIC',
+                        confidence: data.confidence || 0,
+                        timestamp: new Date()
+                    };
+                    
+                    if (results) {
+                        results.qiDetections.push(qiInfo);
+                        
+                        // Track QI groups
+                        if (!results.qiGroups.has(qiInfo.qiGroup)) {
+                            results.qiGroups.set(qiInfo.qiGroup, {
+                                columns: [],
+                                totalRisk: 0,
+                                count: 0
+                            });
+                        }
+                        
+                        const group = results.qiGroups.get(qiInfo.qiGroup);
+                        group.columns.push(data.columnName);
+                        group.totalRisk += qiInfo.riskScore;
+                        group.count++;
+                    }
+                    
+                    const riskLevel = qiInfo.riskScore > 0.7 ? '🔴' : qiInfo.riskScore > 0.4 ? '🟡' : '🟢';
+                    const riskPercentage = (qiInfo.riskScore * 100).toFixed(1);
+                    
+                    log(`🔍 [${jobId}] QUASI-IDENTIFIER: ${qiInfo.qiType} in "${data.columnName}" | Group: ${qiInfo.qiGroup} | Risk: ${riskLevel} ${riskPercentage}%`, 'warning');
+                    
+                    if (data.description) {
+                        log(`   📝 ${data.description}`, 'warning');
+                    }
+                    
+                } else if (data.eventType === 'QI_GROUP_FORMED') {
+                    log(`👥 [${jobId}] QI GROUP FORMED: "${data.groupName}" with ${data.columnCount} columns (combined risk: ${(data.groupRisk * 100).toFixed(1)}%)`, 'warning');
+                    
+                    if (data.columns && data.columns.length > 0) {
+                        log(`   📋 Columns: ${data.columns.join(', ')}`, 'warning');
+                    }
+                }
+                
+                updateActiveScans();
+                updateStats();
+            }
+            
+            handleFinalResults(jobId, data) {
+                const results = this.scanResults.get(jobId);
+                
+                log(`📈 [${jobId}] FINAL SCAN RESULTS:`, 'success');
+                log(`   🚨 PII Columns: ${data.totalPiiColumns || 0}`, 'success');
+                log(`   🔍 Quasi-Identifier Columns: ${data.totalQiColumns || 0}`, 'success');
+                log(`   ⚠️ Total Sensitive Columns: ${(data.totalPiiColumns || 0) + (data.totalQiColumns || 0)}`, 'warning');
+                log(`   📊 Total Columns Scanned: ${data.totalColumns || 0}`, 'info');
+                
+                if (data.piiTypes && data.piiTypes.length > 0) {
+                    log(`   🏷️ PII Types Found: ${data.piiTypes.join(', ')}`, 'success');
+                }
+                
+                if (data.qiGroups && data.qiGroups.length > 0) {
+                    log(`   👥 QI Groups: ${data.qiGroups.length}`, 'warning');
+                    data.qiGroups.forEach((group, index) => {
+                        const avgRisk = group.averageRisk ? (group.averageRisk * 100).toFixed(1) : 'N/A';
+                        log(`     Group ${index + 1}: ${group.name} (${group.columnCount} columns, avg risk: ${avgRisk}%)`, 'warning');
+                    });
+                }
+                
+                if (data.complianceScore !== undefined) {
+                    const scoreEmoji = data.complianceScore > 0.8 ? '🟢' : data.complianceScore > 0.5 ? '🟡' : '🔴';
+                    log(`   ${scoreEmoji} Compliance Score: ${(data.complianceScore * 100).toFixed(1)}%`, 'info');
+                }
+                
+                if (data.recommendations && data.recommendations.length > 0) {
+                    log(`   💡 Recommendations:`, 'info');
+                    data.recommendations.forEach(rec => {
+                        log(`     • ${rec}`, 'info');
+                    });
+                }
+            }
+            
+            handleScanStatusUpdate(jobId, data) {
+                const scanInfo = this.activeScans.get(jobId);
+                const results = this.scanResults.get(jobId);
+                
+                if (scanInfo) {
+                    scanInfo.status = data.status;
+                    scanInfo.phase = data.status;
+                }
+                
+                this.currentPhase = data.status;
+                
+                const phaseEmoji = this.getPhaseEmoji(data.status);
+                log(`${phaseEmoji} [${jobId}] PHASE: ${data.status}`, 'phase');
+                
+                updatePhase(data.status, this.getPhaseDescription(data.status));
+                updatePhaseProgress(data.status);
+                
+                if (data.status === 'COMPLETED') {
+                    log(`🎉 [${jobId}] Scan completed successfully!`, 'success');
+                    
+                    // Show comprehensive summary
+                    this.showScanSummary(jobId, data);
+                    
+                    updatePhaseProgress('COMPLETED');
+                    this.stopMonitoringJob(jobId);
+                } else if (data.status === 'FAILED') {
+                    const errorMsg = data.error || data.message || 'Unknown error';
+                    log(`❌ [${jobId}] Scan failed: ${errorMsg}`, 'error');
+                    updatePhaseProgress('FAILED');
+                    this.stopMonitoringJob(jobId);
+                } else if (data.status === 'CANCELLED') {
+                    log(`⏹️ [${jobId}] Scan was cancelled`, 'warning');
+                    updatePhaseProgress('CANCELLED');
+                    this.stopMonitoringJob(jobId);
+                }
+                
+                updateActiveScans();
+                updateStats();
+            }
+            
+            showScanSummary(jobId, data) {
+                const results = this.scanResults.get(jobId);
+                const scanInfo = this.activeScans.get(jobId);
+                
+                log(`═══════════════════════════════════════════════════════════════`, 'success');
+                log(`📊 COMPREHENSIVE SCAN SUMMARY - Job: ${jobId}`, 'success');
+                log(`═══════════════════════════════════════════════════════════════`, 'success');
+                
+                // Basic stats
+                const totalPii = data.totalPiiColumns || scanInfo?.piiCount || results?.piiDetections.length || 0;
+                const totalQi = data.totalQiColumns || scanInfo?.qiCount || results?.qiDetections.length || 0;
+                const totalCols = data.totalColumns || scanInfo?.totalColumns || 0;
+                
+                log(`🔢 COLUMN STATISTICS:`, 'success');
+                log(`   • Total Columns Scanned: ${totalCols}`, 'info');
+                log(`   • PII Columns Found: ${totalPii}`, 'pii');
+                log(`   • Quasi-Identifier Columns: ${totalQi}`, 'warning');
+                log(`   • Total Sensitive Columns: ${totalPii + totalQi}`, 'error');
+                log(`   • Clean Columns: ${totalCols - totalPii - totalQi}`, 'success');
+                
+                // PII breakdown
+                if (results && results.piiDetections.length > 0) {
+                    log(`🚨 PII DETECTIONS (${results.piiDetections.length}):`, 'pii');
+                    const piiByType = new Map();
+                    results.piiDetections.forEach(pii => {
+                        if (!piiByType.has(pii.piiType)) {
+                            piiByType.set(pii.piiType, []);
+                        }
+                        piiByType.get(pii.piiType).push(pii.columnName);
+                    });
+                    
+                    piiByType.forEach((columns, type) => {
+                        log(`   • ${type}: ${columns.join(', ')}`, 'pii');
+                    });
+                }
+                
+                // QI breakdown
+                if (results && results.qiDetections.length > 0) {
+                    log(`🔍 QUASI-IDENTIFIERS (${results.qiDetections.length}):`, 'warning');
+                    results.qiGroups.forEach((groupInfo, groupName) => {
+                        const avgRisk = (groupInfo.totalRisk / groupInfo.count * 100).toFixed(1);
+                        log(`   • Group "${groupName}": ${groupInfo.columns.join(', ')} (avg risk: ${avgRisk}%)`, 'warning');
+                    });
+                }
+                
+                log(`═══════════════════════════════════════════════════════════════`, 'success');
+            }
+            
+            handleProgressUpdate(jobId, data) {
+                const scanInfo = this.activeScans.get(jobId);
+                const results = this.scanResults.get(jobId);
+                
+                // Update progress from the actual data
+                if (data.progress !== undefined && scanInfo) {
+                    scanInfo.progress = data.progress;
+                    updateProgressBar(data.progress);
+                }
+                
+                if (data.totalColumns !== undefined && scanInfo) {
+                    scanInfo.totalColumns = data.totalColumns;
+                }
+                
+                if (data.columnIndex !== undefined && scanInfo) {
+                    scanInfo.currentColumn = data.columnIndex + 1; // Make it 1-based
+                    this.totalColumnsScanned = Math.max(this.totalColumnsScanned, data.columnIndex + 1);
+                }
+                
+                if (data.eventType === 'COLUMN_PROCESSING_STARTED') {
+                    log(`🔍 [${jobId}] Scanning column ${data.columnIndex + 1}/${data.totalColumns}: ${data.columnName}`, 'info');
+                    updateProgressDetails(`Scanning column: ${data.columnName} (${data.columnIndex + 1}/${data.totalColumns})`);
+                    
+                } else if (data.eventType === 'COLUMN_PROCESSING_COMPLETED') {
+                    log(`✅ [${jobId}] Completed column: ${data.columnName} (${data.columnIndex + 1}/${data.totalColumns})`, 'info');
+                    
+                    // Store column result
+                    if (results) {
+                        results.columnResults.set(data.columnName, {
+                            index: data.columnIndex,
+                            piiFound: data.piiFound || false,
+                            qiFound: data.qiFound || false,
+                            completedAt: new Date()
+                        });
+                    }
+                    
+                } else if (data.eventType === 'PII_DETECTED') {
+                    this.totalPiiDetections++;
+                    if (scanInfo) scanInfo.piiCount++;
+                    
+                    const piiInfo = {
+                        columnName: data.columnName,
+                        piiType: data.piiType,
+                        confidence: data.confidence || 0,
+                        sensitiveData: data.sensitiveData,
+                        timestamp: new Date()
+                    };
+                    
+                    if (results) {
+                        results.piiDetections.push(piiInfo);
+                    }
+                    
+                    const confidence = data.confidence ? `${(data.confidence * 100).toFixed(1)}%` : 'N/A';
+                    const confidenceEmoji = data.confidence > 0.8 ? '🔴' : data.confidence > 0.5 ? '🟡' : '🟢';
+                    
+                    log(`🚨 [${jobId}] PII DETECTED: ${data.piiType} in "${data.columnName}" ${confidenceEmoji} (confidence: ${confidence})`, 'pii');
+                    
+                    if (data.sensitiveData) {
+                        log(`   📄 Sample: ${data.sensitiveData}`, 'pii');
+                    }
+                    
+                } else if (data.eventType === 'SCAN_STARTED') {
+                    log(`🚀 [${jobId}] Scan started - Table: ${data.tableName || 'Unknown'}`, 'success');
+                    updatePhase('DETECTING_PII', `Scanning table: ${data.tableName || 'Unknown'}`);
+                    
+                } else if (data.eventType === 'PROGRESS_UPDATE') {
+                    if (scanInfo) scanInfo.progress = data.progressPercentage || 0;
+                    updateProgressBar(data.progressPercentage || 0);
+                    log(`📈 [${jobId}] Progress: ${(data.progressPercentage || 0).toFixed(1)}%`, 'progress');
+                    
+                } else if (data.eventType === 'ERROR') {
+                    log(`❌ [${jobId}] Error: ${data.message || 'Unknown error'}`, 'error');
+                    
+                } else if (data.eventType === 'PHASE_CHANGE') {
+                    log(`🔄 [${jobId}] Phase changed to: ${data.newPhase}`, 'phase');
+                    updatePhase(data.newPhase, this.getPhaseDescription(data.newPhase));
+                    updatePhaseProgress(data.newPhase);
+                    
+                } else {
+                    log(`📡 [${jobId}] ${data.eventType}${data.columnName ? ` - ${data.columnName}` : ''}`, 'info');
+                }
+                
+                updateActiveScans();
+                updateStats();
+            }
+            
+            getPhaseEmoji(phase) {
+                const emojis = {
+                    'PENDING': '⏳',
+                    'EXTRACTING_METADATA': '🔍',
+                    'SAMPLING': '📊',
+                    'DETECTING_PII': '🚨',
+                    'GENERATING_REPORT': '📄',
+                    'COMPLETED': '🎉',
+                    'FAILED': '❌',
+                    'CANCELLED': '⏹️'
+                };
+                return emojis[phase] || '🔄';
+            }
+            
+            getPhaseDescription(phase) {
+                const descriptions = {
+                    'PENDING': 'Scan job is queued and waiting to start...',
+                    'EXTRACTING_METADATA': 'Analyzing database structure and extracting table/column metadata...',
+                    'SAMPLING': 'Collecting representative data samples for analysis...',
+                    'DETECTING_PII': 'Running PII detection algorithms on data columns...',
+                    'GENERATING_REPORT': 'Compiling results and generating compliance report...',
+                    'COMPLETED': 'Scan completed successfully! Report is ready.',
+                    'FAILED': 'Scan execution failed - check logs for details',
+                    'CANCELLED': 'Scan was cancelled by user request'
+                };
+                return descriptions[phase] || `Phase: ${phase}`;
+            }
+            
+            stopMonitoringJob(jobId) {
+                const scanInfo = this.activeScans.get(jobId);
+                if (scanInfo) {
+                    scanInfo.unsubscribeFunctions.forEach(unsubscribe => unsubscribe());
+                    this.activeScans.delete(jobId);
+                    this.scanResults.delete(jobId);
+                    log(`🛑 Stopped monitoring job: ${jobId}`, 'info');
+                    
+                    if (this.activeScans.size === 0) {
+                        hideProgress();
+                        hidePhaseProgress();
+                    }
+                    
+                    updateActiveScans();
+                    updateStats();
+                }
+            }
+            
+            stopAllMonitoring() {
+                this.activeScans.forEach((scanInfo, jobId) => {
+                    this.stopMonitoringJob(jobId);
+                });
+                log('🛑 Stopped monitoring all jobs', 'info');
+            }
+        }
+        
+        // DOM elements
+        const statusDiv = document.getElementById('connection-status');
+        const connectBtn = document.getElementById('connect-btn');
+        const disconnectBtn = document.getElementById('disconnect-btn');
+        const monitorBtn = document.getElementById('monitor-btn');
+        const clearLogBtn = document.getElementById('clear-log-btn');
+        const jobIdInput = document.getElementById('job-id');
+        const logDiv = document.getElementById('log');
+        const activeConnectionsSpan = document.getElementById('active-connections');
+        const monitoredScansSpan = document.getElementById('monitored-scans');
+        const piiDetectionsSpan = document.getElementById('pii-detections');
+        const qiDetectionsSpan = document.getElementById('qi-detections');
+        const columnsScannedSpan = document.getElementById('columns-scanned');
+        const activeScansContainer = document.getElementById('active-scans-container');
+        const activeScansList = document.getElementById('active-scans-list');
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+        const progressDetails = document.getElementById('progress-details');
+        const phaseIndicator = document.getElementById('phase-indicator');
+        const phaseTitle = document.getElementById('phase-title');
+        const phaseDescription = document.getElementById('phase-description');
+        const phaseProgress = document.getElementById('phase-progress');
+        
+        // Global monitor instance
+        const monitor = new PrivSenseScanMonitor();
+        
+        // Utility functions
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.innerHTML = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${timestamp}] ${message}`);
+        }
+        
+        function updateStatus(message, type = 'info') {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+        
+        function updateStats() {
+            activeConnectionsSpan.textContent = monitor.connected ? '1' : '0';
+            monitoredScansSpan.textContent = monitor.activeScans.size.toString();
+            piiDetectionsSpan.textContent = monitor.totalPiiDetections.toString();
+            qiDetectionsSpan.textContent = monitor.totalQiDetections.toString();
+            columnsScannedSpan.textContent = monitor.totalColumnsScanned.toString();
+        }
+        
+        function updateProgressBar(percentage) {
+            progressBar.style.width = `${percentage}%`;
+            progressBar.textContent = `${percentage.toFixed(1)}%`;
+        }
+        
+        function updateProgressDetails(details) {
+            progressDetails.textContent = details;
+        }
+        
+        function showProgress() {
+            progressContainer.style.display = 'block';
+        }
+        
+        function hideProgress() {
+            progressContainer.style.display = 'none';
+        }
+        
+        function showPhaseProgress() {
+            phaseProgress.classList.add('active');
+        }
+        
+        function hidePhaseProgress() {
+            phaseProgress.classList.remove('active');
+            // Reset all phases
+            document.querySelectorAll('.phase-step').forEach(step => {
+                step.className = 'phase-step';
+            });
+        }
+        
+        function updatePhase(phase, description) {
+            phaseIndicator.style.display = 'block';
+            phaseIndicator.className = 'phase-indicator active';
+            
+            const emoji = monitor.getPhaseEmoji(phase);
+            
+            if (phase === 'COMPLETED') {
+                phaseIndicator.className = 'phase-indicator completed';
+                phaseTitle.innerHTML = `🎉 Scan Completed`;
+            } else if (phase === 'FAILED') {
+                phaseIndicator.className = 'phase-indicator failed';
+                phaseTitle.innerHTML = `❌ Scan Failed`;
+            } else if (phase === 'CANCELLED') {
+                phaseIndicator.className = 'phase-indicator failed';
+                phaseTitle.innerHTML = `⏹️ Scan Cancelled`;
+            } else {
+                phaseTitle.innerHTML = `${emoji} ${phase.replace(/_/g, ' ')}`;
+            }
+            
+            phaseDescription.textContent = description;
+        }
+        
+        function updatePhaseProgress(currentPhase) {
+            const phases = ['PENDING', 'EXTRACTING_METADATA', 'SAMPLING', 'DETECTING_PII', 'GENERATING_REPORT', 'COMPLETED'];
+            const currentIndex = phases.indexOf(currentPhase);
+            
+            phases.forEach((phase, index) => {
+                const elementId = `phase-${phase.toLowerCase().replace(/_/g, '-')}`;
+                const element = document.getElementById(elementId);
+                
+                if (element) {
+                    element.className = 'phase-step';
+                    
+                    if (currentPhase === 'FAILED' || currentPhase === 'CANCELLED') {
+                        if (index <= currentIndex) {
+                            element.classList.add('failed');
+                        }
+                    } else if (index < currentIndex) {
+                        element.classList.add('completed');
+                    } else if (index === currentIndex) {
+                        element.classList.add('active');
+                    } else {
+                        element.classList.add('pending');
+                    }
+                }
+            });
+        }
+        
+        function updateActiveScans() {
+            if (monitor.activeScans.size === 0) {
+                activeScansContainer.style.display = 'none';
+                return;
+            }
+            
+            activeScansContainer.style.display = 'block';
+            activeScansList.innerHTML = '';
+            
+            monitor.activeScans.forEach((scanInfo, jobId) => {
+                const scanItem = document.createElement('div');
+                scanItem.className = 'scan-item';
+                
+                const elapsed = Math.floor((new Date() - scanInfo.startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                const phaseEmoji = monitor.getPhaseEmoji(scanInfo.phase);
+                const totalSensitive = scanInfo.piiCount + scanInfo.qiCount;
+                
+                scanItem.innerHTML = `
+                    <div class="scan-item-header">
+                        <strong>Job ID: ${jobId}</strong>
+                        <button onclick="stopMonitoring('${jobId}')" class="btn-danger" style="padding: 5px 10px; font-size: 12px;">Stop</button>
+                    </div>
+                    <div class="scan-item-details">
+                        <strong>Phase:</strong> ${phaseEmoji} ${scanInfo.phase} | 
+                        <strong>Progress:</strong> ${scanInfo.progress.toFixed(1)}% | 
+                        <strong>Column:</strong> ${scanInfo.currentColumn}/${scanInfo.totalColumns} | 
+                        <strong>PII:</strong> ${scanInfo.piiCount} | 
+                        <strong>QI:</strong> ${scanInfo.qiCount} | 
+                        <strong>Total Sensitive:</strong> ${totalSensitive} | 
+                        <strong>Duration:</strong> ${timeStr}
+                    </div>
+                `;
+                activeScansList.appendChild(scanItem);
+            });
+        }
+        
+        function stopMonitoring(jobId) {
+            monitor.stopMonitoringJob(jobId);
+        }
+        
+        // Event handlers
+        async function connectWebSocket() {
+            connectBtn.disabled = true;
+            connectBtn.textContent = '🔄 Connecting...';
+            
+            try {
+                await monitor.connect();
+                updateStatus('✅ Connected - Ready to monitor scans', 'success');
+                connectBtn.style.display = 'none';
+                disconnectBtn.disabled = false;
+                monitorBtn.disabled = false;
+            } catch (error) {
+                log(`❌ Connection failed: ${error.message}`, 'error');
+                updateStatus('❌ Connection failed', 'error');
+                connectBtn.disabled = false;
+                connectBtn.textContent = '🔌 Connect WebSocket';
+            }
+        }
+        
+        function disconnectWebSocket() {
+            monitor.disconnect();
+            updateStatus('🔌 Disconnected', 'info');
+            connectBtn.style.display = 'inline-block';
+            connectBtn.disabled = false;
+            connectBtn.textContent = '🔌 Connect WebSocket';
+            disconnectBtn.disabled = true;
+            monitorBtn.disabled = true;
+        }
+        
+        function monitorJob() {
+            const jobId = jobIdInput.value.trim();
+            if (!jobId) {
+                log('⚠️ Please enter a job ID to monitor', 'warning');
+                return;
+            }
+            
+            try {
+                monitor.monitorScanJob(jobId);
+                jobIdInput.value = '';
+            } catch (error) {
+                log(`❌ Failed to monitor job: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearLog() {
+            logDiv.innerHTML = '';
+            monitor.totalPiiDetections = 0;
+            monitor.totalQiDetections = 0;
+            monitor.totalColumnsScanned = 0;
+            updateStats();
+            log('🗑️ Log cleared', 'info');
+        }
+        
+        // Event listeners
+        connectBtn.addEventListener('click', connectWebSocket);
+        disconnectBtn.addEventListener('click', disconnectWebSocket);
+        monitorBtn.addEventListener('click', monitorJob);
+        clearLogBtn.addEventListener('click', clearLog);
+        
+        // Enter key to monitor job
+        jobIdInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !monitorBtn.disabled) {
+                monitorJob();
+            }
+        });
+        
+        // Initial setup
+        log('📡 PrivSense Scan Monitor initialized', 'success');
+        log('💡 Click "Connect WebSocket" to start monitoring', 'info');
+        log('🔗 Start scans via Swagger UI: http://localhost:8080/privsense/swagger-ui.html', 'info');
+        updateStats();
+    </script>
+</body>
+</html>

@@ -1,20 +1,18 @@
 package com.privsense.api.config;
 
-import org.mapstruct.InjectionStrategy;
 import org.mapstruct.MapperConfig;
-import org.mapstruct.NullValueCheckStrategy;
 import org.mapstruct.ReportingPolicy;
+import org.mapstruct.Builder;
 
 /**
- * Configuration centralisée pour MapStruct qui remplace l'ancienne approche ModelMapper.
- * Cette classe définit des options communes pour tous les mappeurs MapStruct.
+ * Centralized MapStruct configuration.
+ * This configuration is used by all mapper interfaces to ensure consistent behavior.
  */
 @MapperConfig(
     componentModel = "spring",
-    injectionStrategy = InjectionStrategy.CONSTRUCTOR,
-    nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS,
-    unmappedTargetPolicy = ReportingPolicy.IGNORE
+    unmappedTargetPolicy = ReportingPolicy.IGNORE,
+    builder = @Builder(disableBuilder = false)
 )
 public interface MapStructConfig {
-    // Cette interface ne contient aucune méthode, elle sert uniquement à porter les annotations de configuration
+    // Configuration interface, no methods required
 }

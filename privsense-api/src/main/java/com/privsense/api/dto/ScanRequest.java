@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import lombok.Builder;
 
 import java.util.List;
 import java.util.UUID;
@@ -32,9 +33,11 @@ public class ScanRequest extends BaseRequestDTO {
     
     @Valid
     @NotNull
+    @Builder.Default
     private SamplingConfigDTO samplingConfig = new SamplingConfigDTO();
     
     @Valid
     @NotNull
+    @Builder.Default
     private DetectionConfigDTO detectionConfig = new DetectionConfigDTO();
 }

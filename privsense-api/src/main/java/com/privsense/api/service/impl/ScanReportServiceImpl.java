@@ -56,7 +56,10 @@ public class ScanReportServiceImpl implements ScanReportService {
         Optional<ComplianceReport> reportOpt = complianceReportRepository.findByScanIdWithDetectionResults(jobId);
         
         if (reportOpt.isPresent()) {
-            return reportOpt.get();
+            ComplianceReport report = reportOpt.get();
+            // Initialize the transient scan duration field
+            report.initializeScanDuration();
+            return report;
         } else {
             throw new IllegalStateException("Report not found for completed scan: " + jobId);
         }
@@ -76,6 +79,20 @@ public class ScanReportServiceImpl implements ScanReportService {
         // Use the EntityMapper to convert the report entity to DTO
         // This approach avoids circular references in the object graph
         ComplianceReportDTO dto = entityMapper.toDto(report);
+        
+        // Explicitly mark the report as successful so that the success field is true in the JSON response
+        dto.addMeta("status", "SUCCESS");
+        
+        // Also set success flag for all nested detection results in the table findings
+        if (dto.getTableFindings() != null) {
+            dto.getTableFindings().values().stream()
+                .filter(tableFinding -> tableFinding.getColumns() != null)
+                .forEach(tableFinding -> 
+                    tableFinding.getColumns().forEach(column -> 
+                        column.addMeta("status", "SUCCESS")
+                    )
+                );
+        }
         
         return dto;
     }

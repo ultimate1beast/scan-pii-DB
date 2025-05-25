@@ -242,19 +242,109 @@ public class NerClientStrategy implements PiiDetectionStrategy {
                 return "PERSON_NAME";
             case "LOC":
             case "LOCATION":
-                return "LOCATION";
+            case "ADDRESS":
+                return "ADDRESS";
             case "ORG":
             case "ORGANIZATION":
                 return "ORGANIZATION";
             case "PHONE":
             case "PHONE_NUMBER":
+            case "MOBILE_PHONE_NUMBER":
+            case "LANDLINE_PHONE_NUMBER":
                 return "PHONE_NUMBER";
             case "EMAIL":
+            case "EMAIL_ADDRESS":
                 return "EMAIL";
             case "SSN":
+            case "SOCIAL_SECURITY_NUMBER":
                 return "SSN";
             case "CREDIT_CARD":
+            case "CREDIT_CARD_NUMBER":
                 return "CREDIT_CARD_NUMBER";
+            case "CREDIT_CARD_EXPIRATION_DATE":
+                return "CREDIT_CARD_EXPIRATION_DATE";
+            case "CREDIT_CARD_BRAND":
+                return "CREDIT_CARD_BRAND";
+            case "CVV":
+            case "CVC":
+                return "CARD_SECURITY_CODE";
+            case "PASSPORT":
+            case "PASSPORT_NUMBER":
+                return "PASSPORT_NUMBER";
+            case "PASSPORT_EXPIRATION_DATE":
+                return "PASSPORT_EXPIRATION_DATE";
+            case "DRIVERS_LICENSE":
+            case "DRIVERS_LICENSE_NUMBER":
+            case "DRIVER'S_LICENSE_NUMBER":
+                return "DRIVERS_LICENSE_NUMBER";
+            case "IDENTITY_CARD_NUMBER":
+            case "ID_CARD":
+                return "IDENTITY_CARD_NUMBER";
+            case "NATIONAL_ID":
+            case "NATIONAL_ID_NUMBER":
+                return "NATIONAL_ID_NUMBER";
+            case "IDENTITY_DOCUMENT_NUMBER":
+                return "IDENTITY_DOCUMENT_NUMBER";
+            case "TAX_IDENTIFICATION_NUMBER":
+                return "TAX_ID_NUMBER";
+            case "CPF":
+                return "CPF_NUMBER";
+            case "CNPJ":
+                return "CNPJ_NUMBER";
+            case "BANK_ACCOUNT":
+            case "BANK_ACCOUNT_NUMBER":
+                return "BANK_ACCOUNT_NUMBER";
+            case "IBAN":
+                return "IBAN";
+            case "DATE_OF_BIRTH":
+                return "DATE_OF_BIRTH";
+            case "HEALTH_INSURANCE_ID_NUMBER":
+            case "HEALTH_INSURANCE_NUMBER":
+            case "INSURANCE_NUMBER":
+            case "NATIONAL_HEALTH_INSURANCE_NUMBER":
+                return "HEALTH_INSURANCE_NUMBER";
+            case "INSURANCE_COMPANY":
+                return "INSURANCE_COMPANY";
+            case "IP_ADDRESS":
+                return "IP_ADDRESS";
+            case "USERNAME":
+                return "USERNAME";
+            case "DIGITAL_SIGNATURE":
+                return "DIGITAL_SIGNATURE";
+            case "SOCIAL_MEDIA_HANDLE":
+                return "SOCIAL_MEDIA_HANDLE";
+            case "MEDICATION":
+                return "MEDICATION";
+            case "MEDICAL_CONDITION":
+                return "MEDICAL_CONDITION";
+            case "BLOOD_TYPE":
+                return "BLOOD_TYPE";
+            case "REGISTRATION_NUMBER":
+                return "REGISTRATION_NUMBER";
+            case "STUDENT_ID_NUMBER":
+                return "STUDENT_ID_NUMBER";
+            case "FLIGHT_NUMBER":
+                return "FLIGHT_NUMBER";
+            case "RESERVATION_NUMBER":
+                return "RESERVATION_NUMBER";
+            case "TRANSACTION_NUMBER":
+                return "TRANSACTION_NUMBER";
+            case "LICENSE_PLATE_NUMBER":
+                return "LICENSE_PLATE_NUMBER";
+            case "VEHICLE_REGISTRATION_NUMBER":
+                return "VEHICLE_REGISTRATION_NUMBER";
+            case "POSTAL_CODE":
+                return "POSTAL_CODE";
+            case "FAX_NUMBER":
+                return "FAX_NUMBER";
+            case "VISA_NUMBER":
+                return "VISA_NUMBER";
+            case "SERIAL_NUMBER":
+                return "SERIAL_NUMBER";
+            case "BIRTH_CERTIFICATE_NUMBER":
+                return "BIRTH_CERTIFICATE_NUMBER";
+            case "TRAIN_TICKET_NUMBER":
+                return "TRAIN_TICKET_NUMBER";
             default:
                 return "GENERIC_PII";
         }

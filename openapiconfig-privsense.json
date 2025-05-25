@@ -1,0 +1,3860 @@
+{
+    "openapi": "3.0.1",
+    "info": {
+      "title": "PrivSense API",
+      "description": "API for detecting personally identifiable information (PII) in relational databases",
+      "contact": {
+        "name": "PrivSense Team",
+        "url": "https://www.privsense.com",
+        "email": "support@privsense.com"
+      },
+      "license": {
+        "name": "Proprietary",
+        "url": "https://www.privsense.com/license"
+      },
+      "version": "1.0.0"
+    },
+    "servers": [
+      {
+        "url": "/privsense",
+        "description": "Default server URL"
+      }
+    ],
+    "security": [
+      {
+        "bearerAuth": []
+      }
+    ],
+    "tags": [
+      {
+        "name": "User Management",
+        "description": "APIs for managing user accounts (Admin only)"
+      },
+      {
+        "name": "WebSockets",
+        "description": "Real-time API using WebSockets"
+      },
+      {
+        "name": "Database Connections",
+        "description": "APIs for managing database connections"
+      },
+      {
+        "name": "Scan Templates",
+        "description": "APIs for managing reusable scan configurations"
+      },
+      {
+        "name": "System",
+        "description": "APIs for system operations and monitoring"
+      },
+      {
+        "name": "Configuration",
+        "description": "APIs for managing application configuration and detection rules"
+      },
+      {
+        "name": "Database Sampling",
+        "description": "APIs for testing database column sampling"
+      },
+      {
+        "name": "Dashboard",
+        "description": "APIs for retrieving dashboard data and metrics"
+      },
+      {
+        "name": "Monitoring",
+        "description": "APIs for monitoring system performance metrics"
+      },
+      {
+        "name": "Authentication",
+        "description": "APIs for user authentication and token management"
+      },
+      {
+        "name": "PII Scans",
+        "description": "APIs for managing database PII scans"
+      }
+    ],
+    "paths": {
+      "/api/v1/users/{id}/status": {
+        "put": {
+          "tags": [
+            "User Management"
+          ],
+          "summary": "Update user status",
+          "description": "Enables or disables a user account, or locks/unlocks it (Admin only)",
+          "operationId": "updateUserStatus",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "description": "ID of the user",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "enabled",
+              "in": "query",
+              "description": "Enable or disable the user account",
+              "required": false,
+              "schema": {
+                "type": "boolean"
+              }
+            },
+            {
+              "name": "locked",
+              "in": "query",
+              "description": "Lock or unlock the user account",
+              "required": false,
+              "schema": {
+                "type": "boolean"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "User status updated successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/UserResponse"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "User not found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/UserResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/users/{id}/roles": {
+        "put": {
+          "tags": [
+            "User Management"
+          ],
+          "summary": "Update user roles",
+          "description": "Assigns or removes roles for a user (Admin only)",
+          "operationId": "updateUserRoles",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "description": "ID of the user",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "404": {
+              "description": "User or role not found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/UserResponse"
+                  }
+                }
+              }
+            },
+            "200": {
+              "description": "User roles updated successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/UserResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/scan-templates/{id}": {
+        "get": {
+          "tags": [
+            "Scan Templates"
+          ],
+          "summary": "Get template",
+          "description": "Returns the specified scan template",
+          "operationId": "getTemplate",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "description": "Template ID",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "404": {
+              "description": "Template not found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ScanTemplateDTO"
+                  }
+                }
+              }
+            },
+            "200": {
+              "description": "Template retrieved successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ScanTemplateDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "put": {
+          "tags": [
+            "Scan Templates"
+          ],
+          "summary": "Update scan template",
+          "description": "Updates an existing scan template",
+          "operationId": "updateTemplate",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "description": "Template ID",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanTemplateDTO"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "400": {
+              "description": "Invalid template data",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ScanTemplateDTO"
+                  }
+                }
+              }
+            },
+            "200": {
+              "description": "Template updated successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ScanTemplateDTO"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Template or connection not found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ScanTemplateDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "delete": {
+          "tags": [
+            "Scan Templates"
+          ],
+          "summary": "Delete template",
+          "description": "Deletes the specified scan template",
+          "operationId": "deleteTemplate",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "description": "Template ID",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "404": {
+              "description": "Template not found"
+            },
+            "204": {
+              "description": "Template deleted successfully"
+            }
+          }
+        }
+      },
+      "/api/v1/config": {
+        "get": {
+          "tags": [
+            "Configuration"
+          ],
+          "summary": "Get application configuration",
+          "description": "Returns the current application configuration",
+          "operationId": "getConfiguration",
+          "responses": {
+            "200": {
+              "description": "Configuration retrieved successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ConfigurationDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "put": {
+          "tags": [
+            "Configuration"
+          ],
+          "summary": "Update application configuration",
+          "description": "Updates the application configuration",
+          "operationId": "updateConfiguration",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigurationDTO"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Configuration updated successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ConfigurationDTO"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Invalid configuration",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ConfigurationDTO"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/config/detection-rules/{ruleId}": {
+        "get": {
+          "tags": [
+            "Configuration"
+          ],
+          "summary": "Get detection rule",
+          "description": "Returns a specific detection rule",
+          "operationId": "getDetectionRule",
+          "parameters": [
+            {
+              "name": "ruleId",
+              "in": "path",
+              "description": "ID of the rule",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Rule retrieved successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/DetectionRuleDTO"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Rule not found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/DetectionRuleDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "put": {
+          "tags": [
+            "Configuration"
+          ],
+          "summary": "Update detection rule",
+          "description": "Updates an existing detection rule",
+          "operationId": "updateDetectionRule",
+          "parameters": [
+            {
+              "name": "ruleId",
+              "in": "path",
+              "description": "ID of the rule",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetectionRuleDTO"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "400": {
+              "description": "Invalid rule data",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/DetectionRuleDTO"
+                  }
+                }
+              }
+            },
+            "200": {
+              "description": "Rule updated successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/DetectionRuleDTO"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Rule not found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/DetectionRuleDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "delete": {
+          "tags": [
+            "Configuration"
+          ],
+          "summary": "Delete detection rule",
+          "description": "Deletes a detection rule",
+          "operationId": "deleteDetectionRule",
+          "parameters": [
+            {
+              "name": "ruleId",
+              "in": "path",
+              "description": "ID of the rule",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "204": {
+              "description": "Rule deleted successfully"
+            },
+            "404": {
+              "description": "Rule not found"
+            }
+          }
+        }
+      },
+      "/api/v1/users": {
+        "get": {
+          "tags": [
+            "User Management"
+          ],
+          "summary": "List all users",
+          "description": "Returns a list of all user accounts in the system (Admin only)",
+          "operationId": "getAllUsers",
+          "responses": {
+            "200": {
+              "description": "User list retrieved successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/UserResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "tags": [
+            "User Management"
+          ],
+          "summary": "Create a new user",
+          "description": "Creates a new user account with specified details (Admin only)",
+          "operationId": "createUser",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisterRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "409": {
+              "description": "Username or email already exists",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/UserResponse"
+                  }
+                }
+              }
+            },
+            "201": {
+              "description": "User created successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/UserResponse"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Invalid request parameters",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/UserResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/scans": {
+        "get": {
+          "tags": [
+            "PII Scans"
+          ],
+          "summary": "List all scans",
+          "description": "Returns a paginated list of all scan jobs in the system (Admins see all, API users see only their scans)",
+          "operationId": "getAllScans",
+          "parameters": [
+            {
+              "name": "page",
+              "in": "query",
+              "description": "Page number (0-based)",
+              "required": false,
+              "schema": {
+                "type": "string",
+                "default": "0"
+              }
+            },
+            {
+              "name": "size",
+              "in": "query",
+              "description": "Number of items per page",
+              "required": false,
+              "schema": {
+                "type": "string",
+                "default": "20"
+              }
+            },
+            {
+              "name": "status",
+              "in": "query",
+              "description": "Filter by scan status (completed, pending, failed)",
+              "required": false,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "connectionId",
+              "in": "query",
+              "description": "Filter by database connection ID",
+              "required": false,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "List of scan jobs retrieved successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/PageResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "tags": [
+            "PII Scans"
+          ],
+          "summary": "Start a new scan",
+          "description": "Initiates a new database scan to detect PII in the database (Admin only)",
+          "operationId": "startScan",
+          "requestBody": {
+            "description": "Scan configuration parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "201": {
+              "description": "Scan job created",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ScanJobResponse"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Invalid request parameters",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ScanJobResponse"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Database connection not found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ScanJobResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/scan-templates": {
+        "get": {
+          "tags": [
+            "Scan Templates"
+          ],
+          "summary": "Get all templates",
+          "description": "Returns all available scan templates",
+          "operationId": "getAllTemplates",
+          "parameters": [
+            {
+              "name": "connectionId",
+              "in": "query",
+              "description": "Filter by database connection ID",
+              "required": false,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "List of templates retrieved successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ScanTemplateDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "tags": [
+            "Scan Templates"
+          ],
+          "summary": "Create scan template",
+          "description": "Saves a new scan template for future use",
+          "operationId": "createTemplate",
+          "requestBody": {
+            "description": "Template data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanTemplateDTO"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "201": {
+              "description": "Template created successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ScanTemplateDTO"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Connection not found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ScanTemplateDTO"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Invalid template data",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ScanTemplateDTO"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/scan-templates/{id}/execute": {
+        "post": {
+          "tags": [
+            "Scan Templates"
+          ],
+          "summary": "Execute scan from template",
+          "description": "Starts a new scan using the specified template configuration",
+          "operationId": "executeScanFromTemplate",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "description": "Template ID",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            {
+              "name": "connectionId",
+              "in": "query",
+              "description": "Override the connection ID from the template",
+              "required": false,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "201": {
+              "description": "Scan job created successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ScanJobResponse"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Template or connection not found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ScanJobResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/sampling": {
+        "post": {
+          "tags": [
+            "Database Sampling"
+          ],
+          "summary": "Test column sampling",
+          "description": "Samples data from a specific column to validate sampling functionality",
+          "operationId": "testSampling",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SamplingRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "400": {
+              "description": "Invalid request parameters",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/SamplingResponse"
+                  }
+                }
+              }
+            },
+            "200": {
+              "description": "Sampling successful",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/SamplingResponse"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Database connection or column not found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/SamplingResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/sampling/batch": {
+        "post": {
+          "tags": [
+            "Database Sampling"
+          ],
+          "summary": "Test parallel sampling across multiple tables",
+          "description": "Samples data from multiple tables and columns in parallel to validate the performance of parallel sampling",
+          "operationId": "testBatchSampling",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchSamplingRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Batch sampling completed",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/BatchSamplingResponse"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Invalid request parameters",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/BatchSamplingResponse"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Database connection not found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/BatchSamplingResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/connections": {
+        "get": {
+          "tags": [
+            "Database Connections"
+          ],
+          "summary": "List all database connections",
+          "description": "Returns a list of all active database connections",
+          "operationId": "listConnections",
+          "responses": {
+            "200": {
+              "description": "List of connections retrieved successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ConnectionResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "tags": [
+            "Database Connections"
+          ],
+          "summary": "Create a new database connection",
+          "description": "Establishes a connection to the database using the provided credentials (Admin only)",
+          "operationId": "createConnection",
+          "requestBody": {
+            "description": "Database connection parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatabaseConnectionRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "400": {
+              "description": "Invalid request parameters",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ConnectionResponse"
+                  }
+                }
+              }
+            },
+            "503": {
+              "description": "Unable to connect to database",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ConnectionResponse"
+                  }
+                }
+              }
+            },
+            "200": {
+              "description": "Connection successful",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ConnectionResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/config/detection-rules": {
+        "get": {
+          "tags": [
+            "Configuration"
+          ],
+          "summary": "Get all detection rules",
+          "description": "Returns all detection rules",
+          "operationId": "getDetectionRules",
+          "responses": {
+            "200": {
+              "description": "Rules retrieved successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/DetectionRuleDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "tags": [
+            "Configuration"
+          ],
+          "summary": "Create detection rule",
+          "description": "Creates a new detection rule",
+          "operationId": "createDetectionRule",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetectionRuleDTO"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "400": {
+              "description": "Invalid rule data",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/DetectionRuleDTO"
+                  }
+                }
+              }
+            },
+            "201": {
+              "description": "Rule created successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/DetectionRuleDTO"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/auth/register": {
+        "post": {
+          "tags": [
+            "Authentication"
+          ],
+          "summary": "User registration",
+          "description": "Registers a new user and returns a JWT token",
+          "operationId": "register",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisterRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "201": {
+              "description": "Registration successful",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/AuthResponse"
+                  }
+                }
+              }
+            },
+            "409": {
+              "description": "Username or email already exists",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/AuthResponse"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Invalid request data",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/AuthResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/auth/login": {
+        "post": {
+          "tags": [
+            "Authentication"
+          ],
+          "summary": "User login",
+          "description": "Authenticates a user and returns a JWT token",
+          "operationId": "login",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Authentication successful",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/AuthResponse"
+                  }
+                }
+              }
+            },
+            "401": {
+              "description": "Invalid credentials",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/AuthResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/users/{id}": {
+        "get": {
+          "tags": [
+            "User Management"
+          ],
+          "summary": "Get user details",
+          "description": "Returns details for a specific user (Admin can access any user, regular users can only access their own details)",
+          "operationId": "getUserById",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "description": "ID of the user",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "User details retrieved successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/UserResponse"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "User not found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/UserResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "delete": {
+          "tags": [
+            "User Management"
+          ],
+          "summary": "Delete user",
+          "description": "Removes a user account from the system (Admin only)",
+          "operationId": "deleteUser",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "description": "ID of the user to delete",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "204": {
+              "description": "User deleted successfully"
+            },
+            "404": {
+              "description": "User not found"
+            }
+          }
+        }
+      },
+      "/api/v1/system/info": {
+        "get": {
+          "tags": [
+            "System"
+          ],
+          "summary": "Get system information",
+          "description": "Returns information about the system, including version, uptime, and environment",
+          "operationId": "getSystemInfo",
+          "responses": {
+            "200": {
+              "description": "System information retrieved successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/SystemInfoResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/system/health": {
+        "get": {
+          "tags": [
+            "System"
+          ],
+          "summary": "Get system health",
+          "description": "Returns the health status of the system, including API, database, and NER service status",
+          "operationId": "getHealth",
+          "responses": {
+            "200": {
+              "description": "Health check successful",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/SystemHealthResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/scans/{jobId}": {
+        "get": {
+          "tags": [
+            "PII Scans"
+          ],
+          "summary": "Get scan status",
+          "description": "Returns the current status of a running scan job",
+          "operationId": "getScanStatus",
+          "parameters": [
+            {
+              "name": "jobId",
+              "in": "path",
+              "description": "ID of the scan job",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Scan status retrieved successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ScanJobResponse"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Scan job not found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ScanJobResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "delete": {
+          "tags": [
+            "PII Scans"
+          ],
+          "summary": "Cancel scan",
+          "description": "Cancels an in-progress scan job (Admin only)",
+          "operationId": "cancelScan",
+          "parameters": [
+            {
+              "name": "jobId",
+              "in": "path",
+              "description": "ID of the scan job to cancel",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "409": {
+              "description": "Scan already completed or failed"
+            },
+            "404": {
+              "description": "Scan job not found"
+            },
+            "204": {
+              "description": "Scan cancelled successfully"
+            }
+          }
+        }
+      },
+      "/api/v1/scans/{jobId}/tables": {
+        "get": {
+          "tags": [
+            "PII Scans"
+          ],
+          "summary": "Get scanned tables",
+          "description": "Returns a list of tables that were scanned with PII statistics",
+          "operationId": "getScannedTables",
+          "parameters": [
+            {
+              "name": "jobId",
+              "in": "path",
+              "description": "ID of the scan job",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Scanned tables retrieved successfully",
+              "content": {
+                "application/json": {
+  
+                }
+              }
+            },
+            "404": {
+              "description": "Scan job not found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/ScannedTableDTO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/scans/{jobId}/tables/{tableName}/columns": {
+        "get": {
+          "tags": [
+            "PII Scans"
+          ],
+          "summary": "Get columns from scanned table",
+          "description": "Returns columns from a specific table with PII detection results",
+          "operationId": "getScannedColumns",
+          "parameters": [
+            {
+              "name": "jobId",
+              "in": "path",
+              "description": "ID of the scan job",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            {
+              "name": "tableName",
+              "in": "path",
+              "description": "Name of the table",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Table columns retrieved successfully",
+              "content": {
+                "application/json": {
+  
+                }
+              }
+            },
+            "404": {
+              "description": "Scan job or table not found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/ScannedColumnDTO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/scans/{jobId}/stats": {
+        "get": {
+          "tags": [
+            "PII Scans"
+          ],
+          "summary": "Get scan statistics",
+          "description": "Returns statistics about the scan results including PII distribution",
+          "operationId": "getScanStatistics",
+          "parameters": [
+            {
+              "name": "jobId",
+              "in": "path",
+              "description": "ID of the scan job",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "404": {
+              "description": "Scan job not found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ScanStatsDTO"
+                  }
+                }
+              }
+            },
+            "200": {
+              "description": "Statistics retrieved successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ScanStatsDTO"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/scans/{jobId}/results": {
+        "get": {
+          "tags": [
+            "PII Scans"
+          ],
+          "summary": "Get scan results with filtering",
+          "description": "Returns PII detection results with filtering by PII type and confidence score",
+          "operationId": "getScanResults",
+          "parameters": [
+            {
+              "name": "jobId",
+              "in": "path",
+              "description": "ID of the scan job",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            {
+              "name": "piiType",
+              "in": "query",
+              "description": "Filter by PII type (e.g., EMAIL, NAME, SSN)",
+              "required": false,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "confidenceMin",
+              "in": "query",
+              "description": "Minimum confidence score threshold (0.0-1.0)",
+              "required": false,
+              "schema": {
+                "type": "number",
+                "format": "double"
+              }
+            },
+            {
+              "name": "page",
+              "in": "query",
+              "description": "Page number (0-based)",
+              "required": false,
+              "schema": {
+                "type": "string",
+                "default": "0"
+              }
+            },
+            {
+              "name": "size",
+              "in": "query",
+              "description": "Number of items per page",
+              "required": false,
+              "schema": {
+                "type": "string",
+                "default": "20"
+              }
+            }
+          ],
+          "responses": {
+            "409": {
+              "description": "Scan not completed yet",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DetectionResultDTO"
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Scan job not found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DetectionResultDTO"
+                    }
+                  }
+                }
+              }
+            },
+            "200": {
+              "description": "Results retrieved successfully",
+              "content": {
+                "application/json": {
+  
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/scans/{jobId}/report": {
+        "get": {
+          "tags": [
+            "PII Scans"
+          ],
+          "summary": "Export scan report in specific format",
+          "description": "Exports the scan report in various formats (CSV, text, PDF, JSON)",
+          "operationId": "exportScanReport",
+          "parameters": [
+            {
+              "name": "jobId",
+              "in": "path",
+              "description": "ID of the scan job",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            {
+              "name": "format",
+              "in": "query",
+              "description": "Export format (json, csv, text, pdf)",
+              "required": false,
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "json",
+                  "csv",
+                  "text",
+                  "pdf"
+                ]
+              }
+            }
+          ],
+          "responses": {
+            "409": {
+              "description": "Scan not completed yet",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "200": {
+              "description": "Report exported successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ComplianceReportDTO"
+                  }
+                },
+                "text/csv": {
+                  "schema": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "text/plain": {
+                  "schema": {
+                    "type": "string"
+                  }
+                },
+                "application/pdf": {
+                  "schema": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Scan job not found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "415": {
+              "description": "Requested format not supported",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/sampling/configuration": {
+        "get": {
+          "tags": [
+            "Database Sampling"
+          ],
+          "summary": "Get sampling configuration",
+          "description": "Returns the available sampling configuration options",
+          "operationId": "getSamplingConfiguration",
+          "responses": {
+            "200": {
+              "description": "OK",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/SamplingConfigDTO"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/monitoring/usage": {
+        "get": {
+          "tags": [
+            "Monitoring"
+          ],
+          "summary": "Get API usage statistics",
+          "description": "Returns usage statistics for the API, including request counts and error rates",
+          "operationId": "getUsageStats",
+          "responses": {
+            "200": {
+              "description": "Usage statistics retrieved successfully",
+              "content": {
+                "application/json": {
+  
+                }
+              }
+            }
+          }
+        },
+        "delete": {
+          "tags": [
+            "Monitoring"
+          ],
+          "summary": "Reset API usage statistics",
+          "description": "Clears all API usage statistics. Requires administrative privileges.",
+          "operationId": "resetUsageStats",
+          "responses": {
+            "200": {
+              "description": "Usage statistics cleared successfully",
+              "content": {
+                "application/json": {
+  
+                }
+              }
+            }
+          },
+          "security": [
+            {
+              "basicAuth": []
+            }
+          ]
+        }
+      },
+      "/api/v1/monitoring/metrics": {
+        "get": {
+          "tags": [
+            "Monitoring"
+          ],
+          "summary": "Get API performance metrics",
+          "description": "Returns basic performance metrics for the API, including memory usage and thread counts",
+          "operationId": "getMetrics",
+          "responses": {
+            "200": {
+              "description": "Metrics retrieved successfully",
+              "content": {
+                "application/json": {
+  
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/dashboard/trends": {
+        "get": {
+          "tags": [
+            "Dashboard"
+          ],
+          "summary": "Get scan trends data",
+          "description": "Returns time series data for chart visualizations",
+          "operationId": "getScanTrends",
+          "parameters": [
+            {
+              "name": "timeframe",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "string",
+                "default": "30"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Trends data retrieved successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ScanTrendsDTO"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/dashboard/top-findings": {
+        "get": {
+          "tags": [
+            "Dashboard"
+          ],
+          "summary": "Get top PII findings",
+          "description": "Returns the most common PII types found",
+          "operationId": "getTopPiiFindings",
+          "parameters": [
+            {
+              "name": "limit",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "integer",
+                "format": "int32",
+                "default": 5
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Top findings retrieved successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/PiiSummaryDTO"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/dashboard/summary": {
+        "get": {
+          "tags": [
+            "Dashboard"
+          ],
+          "summary": "Get dashboard summary",
+          "description": "Returns summary statistics including counts of connections, scans, and PII findings",
+          "operationId": "getDashboardSummary",
+          "responses": {
+            "200": {
+              "description": "Summary retrieved successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/DashboardSummaryDTO"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/dashboard/recent-scans": {
+        "get": {
+          "tags": [
+            "Dashboard"
+          ],
+          "summary": "Get recent scans",
+          "description": "Returns the most recent scan jobs",
+          "operationId": "getRecentScans",
+          "parameters": [
+            {
+              "name": "limit",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "integer",
+                "format": "int32",
+                "default": 5
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Recent scans retrieved successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ScanJobResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/connections/{connectionId}": {
+        "get": {
+          "tags": [
+            "Database Connections"
+          ],
+          "summary": "Get connection details",
+          "description": "Returns details for a specific database connection",
+          "operationId": "getConnection",
+          "parameters": [
+            {
+              "name": "connectionId",
+              "in": "path",
+              "description": "ID of the connection",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "404": {
+              "description": "Connection not found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ConnectionResponse"
+                  }
+                }
+              }
+            },
+            "200": {
+              "description": "Connection found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ConnectionResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "delete": {
+          "tags": [
+            "Database Connections"
+          ],
+          "summary": "Close a database connection",
+          "description": "Closes an existing database connection and releases resources (Admin only)",
+          "operationId": "closeConnection",
+          "parameters": [
+            {
+              "name": "connectionId",
+              "in": "path",
+              "description": "ID of the connection to close",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "404": {
+              "description": "Connection not found"
+            },
+            "204": {
+              "description": "Connection closed successfully"
+            }
+          }
+        }
+      },
+      "/api/v1/connections/{connectionId}/metadata": {
+        "get": {
+          "tags": [
+            "Database Connections"
+          ],
+          "summary": "Get database metadata",
+          "description": "Returns the schema information for the specified database connection",
+          "operationId": "getDatabaseMetadata",
+          "parameters": [
+            {
+              "name": "connectionId",
+              "in": "path",
+              "description": "ID of the connection",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "404": {
+              "description": "Connection not found",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/SchemaInfoDTO"
+                  }
+                }
+              }
+            },
+            "200": {
+              "description": "Metadata retrieved successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/SchemaInfoDTO"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/auth/me": {
+        "get": {
+          "tags": [
+            "Authentication"
+          ],
+          "summary": "Get current user details",
+          "description": "Returns the details of the currently authenticated user",
+          "operationId": "getCurrentUser",
+          "responses": {
+            "200": {
+              "description": "User details retrieved successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/UserDetailsDTO"
+                  }
+                }
+              }
+            },
+            "401": {
+              "description": "Not authenticated",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/UserDetailsDTO"
+                  }
+                }
+              }
+            }
+          },
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ]
+        }
+      }
+    },
+    "components": {
+      "schemas": {
+        "UserResponse": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "username": {
+              "type": "string"
+            },
+            "email": {
+              "type": "string"
+            },
+            "firstName": {
+              "type": "string"
+            },
+            "lastName": {
+              "type": "string"
+            },
+            "enabled": {
+              "type": "boolean"
+            },
+            "locked": {
+              "type": "boolean"
+            },
+            "roles": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "updatedAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "lastLogin": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        },
+        "RoleRequest": {
+          "required": [
+            "roles"
+          ],
+          "type": "object",
+          "properties": {
+            "roles": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "DetectionConfigDTO": {
+          "type": "object",
+          "properties": {
+            "heuristicThreshold": {
+              "type": "number",
+              "description": "Threshold for heuristic-based detection",
+              "format": "double",
+              "example": 0.7
+            },
+            "regexThreshold": {
+              "type": "number",
+              "description": "Threshold for regex-based detection",
+              "format": "double",
+              "example": 0.8
+            },
+            "nerThreshold": {
+              "type": "number",
+              "description": "Threshold for NER-based detection",
+              "format": "double",
+              "example": 0.6
+            },
+            "reportingThreshold": {
+              "type": "number",
+              "description": "Minimum threshold for reporting PII findings",
+              "format": "double",
+              "example": 0.5
+            },
+            "stopPipelineOnHighConfidence": {
+              "type": "boolean",
+              "description": "Whether to stop detection pipeline on high confidence matches"
+            },
+            "entropyEnabled": {
+              "type": "boolean",
+              "description": "Whether entropy-based detection is enabled"
+            }
+          },
+          "description": "PII detection configuration settings"
+        },
+        "SamplingConfigDTO": {
+          "type": "object",
+          "properties": {
+            "defaultSize": {
+              "type": "integer",
+              "description": "Default sample size",
+              "format": "int32",
+              "example": 100
+            },
+            "maxConcurrentDbQueries": {
+              "type": "integer",
+              "description": "Maximum concurrent database queries",
+              "format": "int32",
+              "example": 10
+            },
+            "entropyCalculationEnabled": {
+              "type": "boolean",
+              "description": "Whether entropy calculation is enabled during sampling"
+            },
+            "defaultMethod": {
+              "type": "string",
+              "description": "Default sampling method",
+              "example": "RANDOM"
+            }
+          },
+          "description": "Data sampling configuration settings"
+        },
+        "ScanTemplateDTO": {
+          "required": [
+            "connectionId",
+            "name"
+          ],
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": {
+              "maxLength": 255,
+              "minLength": 0,
+              "type": "string"
+            },
+            "description": {
+              "maxLength": 1000,
+              "minLength": 0,
+              "type": "string"
+            },
+            "createdBy": {
+              "type": "string"
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "updatedAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "connectionId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "targetTables": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "samplingConfig": {
+              "$ref": "#/components/schemas/SamplingConfigDTO"
+            },
+            "detectionConfig": {
+              "$ref": "#/components/schemas/DetectionConfigDTO"
+            },
+            "meta": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "CircuitBreakerConfigDTO": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Whether circuit breaker is enabled"
+            },
+            "failureThreshold": {
+              "type": "integer",
+              "description": "Failure threshold before opening circuit",
+              "format": "int32",
+              "example": 5
+            },
+            "resetTimeoutSeconds": {
+              "type": "integer",
+              "description": "Reset timeout in seconds",
+              "format": "int32",
+              "example": 30
+            }
+          },
+          "description": "Circuit breaker configuration settings"
+        },
+        "ConfigurationDTO": {
+          "type": "object",
+          "properties": {
+            "detection": {
+              "$ref": "#/components/schemas/DetectionConfigDTO"
+            },
+            "sampling": {
+              "$ref": "#/components/schemas/SamplingConfigDTO"
+            },
+            "ner": {
+              "$ref": "#/components/schemas/NerConfigDTO"
+            },
+            "reporting": {
+              "$ref": "#/components/schemas/ReportingConfigDTO"
+            },
+            "database": {
+              "$ref": "#/components/schemas/DatabaseConfigDTO"
+            }
+          },
+          "description": "Application configuration settings"
+        },
+        "DatabaseConfigDTO": {
+          "type": "object",
+          "properties": {
+            "pool": {
+              "$ref": "#/components/schemas/PoolConfigDTO"
+            },
+            "driverDir": {
+              "type": "string",
+              "description": "Directory for JDBC drivers",
+              "example": "./drivers"
+            }
+          },
+          "description": "Database configuration settings"
+        },
+        "NerConfigDTO": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Whether NER is enabled"
+            },
+            "serviceUrl": {
+              "type": "string",
+              "description": "NER service URL",
+              "example": "http://localhost:5000/detect-pii"
+            },
+            "timeoutSeconds": {
+              "type": "integer",
+              "description": "Timeout for NER requests in seconds",
+              "format": "int32",
+              "example": 30
+            },
+            "maxSamples": {
+              "type": "integer",
+              "description": "Maximum samples to send to NER service",
+              "format": "int32",
+              "example": 100
+            },
+            "retryAttempts": {
+              "type": "integer",
+              "description": "Number of retry attempts for NER requests",
+              "format": "int32",
+              "example": 2
+            },
+            "circuitBreaker": {
+              "$ref": "#/components/schemas/CircuitBreakerConfigDTO"
+            }
+          },
+          "description": "Named Entity Recognition configuration settings"
+        },
+        "PoolConfigDTO": {
+          "type": "object",
+          "properties": {
+            "connectionTimeout": {
+              "type": "integer",
+              "description": "Connection timeout in milliseconds",
+              "format": "int64",
+              "example": 30000
+            },
+            "idleTimeout": {
+              "type": "integer",
+              "description": "Idle timeout in milliseconds",
+              "format": "int64",
+              "example": 600000
+            },
+            "maxLifetime": {
+              "type": "integer",
+              "description": "Maximum connection lifetime in milliseconds",
+              "format": "int64",
+              "example": 1800000
+            },
+            "minimumIdle": {
+              "type": "integer",
+              "description": "Minimum idle connections",
+              "format": "int32",
+              "example": 5
+            },
+            "maximumPoolSize": {
+              "type": "integer",
+              "description": "Maximum pool size",
+              "format": "int32",
+              "example": 10
+            }
+          },
+          "description": "Connection pool configuration settings"
+        },
+        "ReportingConfigDTO": {
+          "type": "object",
+          "properties": {
+            "pdfEnabled": {
+              "type": "boolean",
+              "description": "Whether PDF report format is enabled"
+            },
+            "csvEnabled": {
+              "type": "boolean",
+              "description": "Whether CSV report format is enabled"
+            },
+            "textEnabled": {
+              "type": "boolean",
+              "description": "Whether text report format is enabled"
+            },
+            "reportOutputPath": {
+              "type": "string",
+              "description": "Path where reports are saved",
+              "example": "./reports"
+            }
+          },
+          "description": "Report generation configuration settings"
+        },
+        "DetectionRuleDTO": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Unique identifier of the rule",
+              "example": "rule-123"
+            },
+            "name": {
+              "type": "string",
+              "description": "Name of the rule",
+              "example": "Credit Card Detector"
+            },
+            "pattern": {
+              "type": "string",
+              "description": "Pattern used for detection",
+              "example": "\\d{4}[- ]?\\d{4}[- ]?\\d{4}[- ]?\\d{4}"
+            },
+            "piiType": {
+              "type": "string",
+              "description": "PII type detected by this rule",
+              "example": "CREDIT_CARD"
+            },
+            "confidenceScore": {
+              "type": "number",
+              "description": "Confidence score when this rule matches",
+              "format": "double",
+              "example": 0.95
+            },
+            "description": {
+              "type": "string",
+              "description": "Description of what the rule detects",
+              "example": "Detects credit card numbers"
+            },
+            "enabled": {
+              "type": "boolean",
+              "description": "Whether this rule is active"
+            },
+            "ruleType": {
+              "type": "string",
+              "description": "Type of detection rule",
+              "enum": [
+                "REGEX",
+                "HEURISTIC",
+                "NER"
+              ]
+            }
+          },
+          "description": "PII detection rule configuration"
+        },
+        "RegisterRequest": {
+          "required": [
+            "email",
+            "firstName",
+            "lastName",
+            "password",
+            "username"
+          ],
+          "type": "object",
+          "properties": {
+            "username": {
+              "maxLength": 50,
+              "minLength": 3,
+              "type": "string"
+            },
+            "password": {
+              "maxLength": 2147483647,
+              "minLength": 6,
+              "type": "string"
+            },
+            "email": {
+              "type": "string"
+            },
+            "firstName": {
+              "type": "string"
+            },
+            "lastName": {
+              "type": "string"
+            }
+          }
+        },
+        "ScanRequest": {
+          "required": [
+            "connectionId",
+            "detectionConfig",
+            "samplingConfig"
+          ],
+          "type": "object",
+          "properties": {
+            "connectionId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "targetTables": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "samplingConfig": {
+              "$ref": "#/components/schemas/SamplingConfigDTO"
+            },
+            "detectionConfig": {
+              "$ref": "#/components/schemas/DetectionConfigDTO"
+            }
+          }
+        },
+        "Link": {
+          "type": "object",
+          "properties": {
+            "href": {
+              "type": "string"
+            },
+            "hreflang": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            },
+            "deprecation": {
+              "type": "string"
+            },
+            "profile": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "templated": {
+              "type": "boolean"
+            }
+          }
+        },
+        "ScanJobResponse": {
+          "type": "object",
+          "properties": {
+            "meta": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            },
+            "links": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Link"
+              }
+            },
+            "jobId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "connectionId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "status": {
+              "type": "string"
+            },
+            "currentOperation": {
+              "type": "string"
+            },
+            "startTime": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "endTime": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "lastUpdateTime": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "progress": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "completed": {
+              "type": "boolean"
+            },
+            "failed": {
+              "type": "boolean"
+            },
+            "errorMessage": {
+              "type": "string"
+            },
+            "databaseName": {
+              "type": "string"
+            },
+            "databaseProductName": {
+              "type": "string"
+            },
+            "totalColumnsScanned": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "totalPiiColumnsFound": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "success": {
+              "type": "boolean"
+            }
+          }
+        },
+        "SamplingRequest": {
+          "required": [
+            "columnName",
+            "connectionId",
+            "tableName"
+          ],
+          "type": "object",
+          "properties": {
+            "connectionId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "tableName": {
+              "type": "string"
+            },
+            "columnName": {
+              "type": "string"
+            },
+            "config": {
+              "$ref": "#/components/schemas/SamplingConfigDTO"
+            }
+          }
+        },
+        "SamplingResponse": {
+          "type": "object",
+          "properties": {
+            "meta": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            },
+            "links": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Link"
+              }
+            },
+            "tableName": {
+              "type": "string"
+            },
+            "columnName": {
+              "type": "string"
+            },
+            "sampleSize": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "samplingMethod": {
+              "type": "string"
+            },
+            "actualRowCount": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullCount": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullPercentage": {
+              "type": "number",
+              "format": "double"
+            },
+            "nonNullPercentage": {
+              "type": "number",
+              "format": "double"
+            },
+            "entropy": {
+              "type": "number",
+              "format": "double"
+            },
+            "entropyCalculated": {
+              "type": "boolean"
+            },
+            "sampleValues": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "samplingTimeMs": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "valueDistribution": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "format": "int64"
+              }
+            },
+            "success": {
+              "type": "boolean"
+            }
+          }
+        },
+        "BatchSamplingRequest": {
+          "required": [
+            "connectionId",
+            "tables"
+          ],
+          "type": "object",
+          "properties": {
+            "connectionId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "defaultConfig": {
+              "$ref": "#/components/schemas/SamplingConfigDTO"
+            },
+            "tables": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TableSamplingRequest"
+              }
+            }
+          }
+        },
+        "TableSamplingRequest": {
+          "required": [
+            "columnNames",
+            "tableName"
+          ],
+          "type": "object",
+          "properties": {
+            "tableName": {
+              "type": "string"
+            },
+            "columnNames": {
+              "uniqueItems": true,
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "sampleSize": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        },
+        "BatchSamplingResponse": {
+          "type": "object",
+          "properties": {
+            "meta": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            },
+            "links": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Link"
+              }
+            },
+            "totalTablesProcessed": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "totalColumnsProcessed": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "totalExecutionTimeMs": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "averageTableTimeMs": {
+              "type": "number",
+              "format": "double"
+            },
+            "results": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TableSamplingResult"
+              }
+            },
+            "success": {
+              "type": "boolean"
+            }
+          }
+        },
+        "ColumnSamplingResult": {
+          "type": "object",
+          "properties": {
+            "meta": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            },
+            "links": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Link"
+              }
+            },
+            "columnName": {
+              "type": "string"
+            },
+            "sampleSize": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "samplingMethod": {
+              "type": "string"
+            },
+            "actualRowCount": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullCount": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullPercentage": {
+              "type": "number",
+              "format": "double"
+            },
+            "nonNullPercentage": {
+              "type": "number",
+              "format": "double"
+            },
+            "entropy": {
+              "type": "number",
+              "format": "double"
+            },
+            "entropyCalculated": {
+              "type": "boolean"
+            },
+            "topValues": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "format": "int64"
+              }
+            },
+            "success": {
+              "type": "boolean"
+            }
+          }
+        },
+        "TableSamplingResult": {
+          "type": "object",
+          "properties": {
+            "meta": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            },
+            "links": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Link"
+              }
+            },
+            "tableName": {
+              "type": "string"
+            },
+            "columnCount": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "samplingTimeMs": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "columnResults": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/components/schemas/ColumnSamplingResult"
+              }
+            },
+            "success": {
+              "type": "boolean"
+            }
+          }
+        },
+        "DatabaseConnectionRequest": {
+          "required": [
+            "databaseName",
+            "driverClassName",
+            "host",
+            "port",
+            "username"
+          ],
+          "type": "object",
+          "properties": {
+            "host": {
+              "type": "string"
+            },
+            "port": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "databaseName": {
+              "type": "string"
+            },
+            "username": {
+              "type": "string"
+            },
+            "password": {
+              "type": "string"
+            },
+            "driverClassName": {
+              "type": "string"
+            },
+            "sslEnabled": {
+              "type": "boolean"
+            },
+            "sslTrustStorePath": {
+              "type": "string"
+            },
+            "sslTrustStorePassword": {
+              "type": "string"
+            }
+          }
+        },
+        "ConnectionResponse": {
+          "type": "object",
+          "properties": {
+            "meta": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            },
+            "links": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Link"
+              }
+            },
+            "connectionId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "host": {
+              "type": "string"
+            },
+            "port": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "databaseName": {
+              "type": "string"
+            },
+            "username": {
+              "type": "string"
+            },
+            "databaseProductName": {
+              "type": "string"
+            },
+            "databaseProductVersion": {
+              "type": "string"
+            },
+            "sslEnabled": {
+              "type": "boolean"
+            },
+            "status": {
+              "type": "string"
+            },
+            "success": {
+              "type": "boolean"
+            }
+          }
+        },
+        "AuthResponse": {
+          "type": "object",
+          "properties": {
+            "token": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        },
+        "AuthRequest": {
+          "required": [
+            "password",
+            "username"
+          ],
+          "type": "object",
+          "properties": {
+            "username": {
+              "type": "string"
+            },
+            "password": {
+              "type": "string"
+            }
+          }
+        },
+        "SystemInfoResponse": {
+          "type": "object",
+          "properties": {
+            "version": {
+              "type": "string"
+            },
+            "buildTime": {
+              "type": "string"
+            },
+            "uptime": {
+              "type": "string"
+            },
+            "environment": {
+              "type": "string"
+            },
+            "features": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "boolean"
+              }
+            },
+            "additionalInfo": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "SystemHealthResponse": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string"
+            },
+            "components": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "timestamp": {
+              "type": "string"
+            },
+            "details": {
+              "type": "string"
+            }
+          }
+        },
+        "PageResponse": {
+          "type": "object",
+          "properties": {
+            "meta": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            },
+            "links": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Link"
+              }
+            },
+            "content": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
+            "pageNumber": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "pageSize": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "totalElements": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "totalPages": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "first": {
+              "type": "boolean"
+            },
+            "last": {
+              "type": "boolean"
+            },
+            "hasNext": {
+              "type": "boolean"
+            },
+            "hasPrevious": {
+              "type": "boolean"
+            },
+            "success": {
+              "type": "boolean"
+            }
+          }
+        },
+        "ScannedTableDTO": {
+          "type": "object",
+          "properties": {
+            "meta": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            },
+            "links": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Link"
+              }
+            },
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "schemaName": {
+              "type": "string"
+            },
+            "tableName": {
+              "type": "string"
+            },
+            "qualifiedName": {
+              "type": "string"
+            },
+            "totalColumns": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "piiColumnCount": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "quasiIdentifierColumnCount": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "highRiskColumnCount": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "mediumRiskColumnCount": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "lowRiskColumnCount": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "piiTypeDistribution": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "success": {
+              "type": "boolean"
+            }
+          }
+        },
+        "ScannedColumnDTO": {
+          "type": "object",
+          "properties": {
+            "meta": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            },
+            "links": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Link"
+              }
+            },
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "tableId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "columnName": {
+              "type": "string"
+            },
+            "dataType": {
+              "type": "string"
+            },
+            "qualifiedName": {
+              "type": "string"
+            },
+            "hasPii": {
+              "type": "boolean"
+            },
+            "highestConfidencePiiType": {
+              "type": "string"
+            },
+            "confidenceScore": {
+              "type": "number",
+              "format": "double"
+            },
+            "detectionMethods": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "riskLevel": {
+              "type": "string"
+            },
+            "correlatedColumns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "clusteringMethod": {
+              "type": "string"
+            },
+            "entropy": {
+              "type": "number",
+              "format": "double"
+            },
+            "quasiIdentifier": {
+              "type": "boolean"
+            },
+            "success": {
+              "type": "boolean"
+            }
+          }
+        },
+        "ScanStatsDTO": {
+          "type": "object",
+          "properties": {
+            "meta": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            },
+            "links": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Link"
+              }
+            },
+            "scanId": {
+              "type": "string"
+            },
+            "databaseName": {
+              "type": "string"
+            },
+            "databaseProductName": {
+              "type": "string"
+            },
+            "databaseProductVersion": {
+              "type": "string"
+            },
+            "startTime": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "endTime": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "scanDuration": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string"
+            },
+            "totalTablesScanned": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "totalColumnsScanned": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "piiColumnsFound": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "quasiIdentifierColumnsFound": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "totalPiiCandidates": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "piiTypeDistribution": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "completed": {
+              "type": "boolean"
+            },
+            "failed": {
+              "type": "boolean"
+            },
+            "success": {
+              "type": "boolean"
+            }
+          }
+        },
+        "DetectionResultDTO": {
+          "type": "object",
+          "properties": {
+            "meta": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            },
+            "links": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Link"
+              }
+            },
+            "tableName": {
+              "type": "string"
+            },
+            "columnName": {
+              "type": "string"
+            },
+            "dataType": {
+              "type": "string"
+            },
+            "piiType": {
+              "type": "string"
+            },
+            "confidenceScore": {
+              "type": "number",
+              "format": "double"
+            },
+            "detectionMethods": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "sensitiveData": {
+              "type": "boolean"
+            },
+            "riskScore": {
+              "type": "number",
+              "format": "double"
+            },
+            "quasiIdentifierRiskScore": {
+              "type": "number",
+              "format": "double"
+            },
+            "correlatedColumns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "clusteringMethod": {
+              "type": "string"
+            },
+            "quasiIdentifier": {
+              "type": "boolean"
+            },
+            "pii": {
+              "type": "boolean"
+            },
+            "success": {
+              "type": "boolean"
+            }
+          }
+        },
+        "ComplianceReportDTO": {
+          "type": "object",
+          "properties": {
+            "meta": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            },
+            "links": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Link"
+              }
+            },
+            "scanInfo": {
+              "$ref": "#/components/schemas/ScanInfoDTO"
+            },
+            "databaseInfo": {
+              "$ref": "#/components/schemas/DatabaseInfoDTO"
+            },
+            "scanSummary": {
+              "$ref": "#/components/schemas/ScanSummaryDTO"
+            },
+            "piiTypesDetected": {
+              "$ref": "#/components/schemas/PiiTypesDetectedDTO"
+            },
+            "detectionMethodsSummary": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "tableFindings": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/components/schemas/TableFindingsDTO"
+              }
+            },
+            "scanConfiguration": {
+              "$ref": "#/components/schemas/ScanConfigurationDTO"
+            },
+            "success": {
+              "type": "boolean"
+            }
+          }
+        },
+        "DatabaseInfoDTO": {
+          "type": "object",
+          "properties": {
+            "host": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "product": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            }
+          }
+        },
+        "PiiTypesDetectedDTO": {
+          "type": "object",
+          "properties": {
+            "directIdentifiers": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "sensitiveData": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "dateRelated": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "quasiIdentifiers": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        },
+        "ScanConfigurationDTO": {
+          "type": "object",
+          "properties": {
+            "sampling": {
+              "type": "object"
+            },
+            "detection": {
+              "type": "object"
+            }
+          }
+        },
+        "ScanInfoDTO": {
+          "type": "object",
+          "properties": {
+            "scanId": {
+              "type": "string"
+            },
+            "reportId": {
+              "type": "string"
+            },
+            "scanStartTime": {
+              "type": "object"
+            },
+            "scanEndTime": {
+              "type": "object"
+            },
+            "scanDuration": {
+              "type": "string"
+            }
+          }
+        },
+        "ScanSummaryDTO": {
+          "type": "object",
+          "properties": {
+            "tablesScanned": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "columnsScanned": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "piiColumnsFound": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "totalPiiCandidates": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        },
+        "TableFindingsDTO": {
+          "type": "object",
+          "properties": {
+            "columns": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/DetectionResultDTO"
+              }
+            }
+          }
+        },
+        "ScanTrendsDTO": {
+          "type": "object",
+          "properties": {
+            "meta": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            },
+            "links": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Link"
+              }
+            },
+            "timeframe": {
+              "type": "string"
+            },
+            "startDate": {
+              "type": "string"
+            },
+            "endDate": {
+              "type": "string"
+            },
+            "scanCountByDate": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "format": "int64"
+              }
+            },
+            "piiCountByDate": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "format": "int64"
+              }
+            },
+            "timeSeriesData": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TimeSeriesDataPoint"
+              }
+            },
+            "success": {
+              "type": "boolean"
+            }
+          }
+        },
+        "TimeSeriesDataPoint": {
+          "type": "object",
+          "properties": {
+            "date": {
+              "type": "string",
+              "format": "date"
+            },
+            "scanCount": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "piiCount": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        },
+        "PiiSummaryDTO": {
+          "type": "object",
+          "properties": {
+            "meta": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            },
+            "links": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Link"
+              }
+            },
+            "piiType": {
+              "type": "string"
+            },
+            "count": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "percentage": {
+              "type": "number",
+              "format": "double"
+            },
+            "success": {
+              "type": "boolean"
+            }
+          }
+        },
+        "DashboardSummaryDTO": {
+          "type": "object",
+          "properties": {
+            "meta": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            },
+            "links": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Link"
+              }
+            },
+            "totalScans": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "completedScans": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "failedScans": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "totalColumnsScanned": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "totalPiiColumnsFound": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "piiPercentage": {
+              "type": "number",
+              "format": "double"
+            },
+            "lastUpdated": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "success": {
+              "type": "boolean"
+            }
+          }
+        },
+        "ColumnInfoDTO": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            },
+            "comments": {
+              "type": "string"
+            },
+            "size": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "decimalDigits": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": {
+              "type": "boolean"
+            },
+            "primaryKey": {
+              "type": "boolean"
+            },
+            "foreignKey": {
+              "type": "boolean"
+            }
+          }
+        },
+        "RelationshipDTO": {
+          "type": "object",
+          "properties": {
+            "pkTable": {
+              "type": "string"
+            },
+            "fkTable": {
+              "type": "string"
+            },
+            "pkColumn": {
+              "type": "string"
+            },
+            "fkColumn": {
+              "type": "string"
+            }
+          }
+        },
+        "SchemaInfoDTO": {
+          "type": "object",
+          "properties": {
+            "meta": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            },
+            "links": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Link"
+              }
+            },
+            "catalogName": {
+              "type": "string"
+            },
+            "schemaName": {
+              "type": "string"
+            },
+            "tables": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TableInfoDTO"
+              }
+            },
+            "totalTableCount": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "totalColumnCount": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "totalRelationshipCount": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "success": {
+              "type": "boolean"
+            }
+          }
+        },
+        "TableInfoDTO": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            },
+            "comments": {
+              "type": "string"
+            },
+            "columns": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ColumnInfoDTO"
+              }
+            },
+            "importedRelationships": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/RelationshipDTO"
+              }
+            },
+            "exportedRelationships": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/RelationshipDTO"
+              }
+            }
+          }
+        },
+        "UserDetailsDTO": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "username": {
+              "type": "string"
+            },
+            "email": {
+              "type": "string"
+            },
+            "firstName": {
+              "type": "string"
+            },
+            "lastName": {
+              "type": "string"
+            },
+            "roles": {
+              "uniqueItems": true,
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "lastLogin": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      },
+      "securitySchemes": {
+        "bearerAuth": {
+          "type": "http",
+          "description": "Enter JWT token with Bearer prefix. Example: Bearer eyJhbGciOiJIUzI1NiIsIn...",
+          "scheme": "bearer",
+          "bearerFormat": "JWT"
+        }
+      }
+    }
+  }

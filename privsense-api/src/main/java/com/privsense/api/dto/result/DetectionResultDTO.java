@@ -2,11 +2,13 @@ package com.privsense.api.dto.result;
 
 import com.privsense.api.dto.base.BaseResponseDTO;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -25,11 +27,22 @@ public class DetectionResultDTO extends BaseResponseDTO {
     private String piiType;
     private double confidenceScore;
     private List<String> detectionMethods;
+    
+    // Explicit isPii field to clearly indicate if this column contains PII
+    private boolean isPii;
+    
+    // Additional fields for categorizing the finding
     private boolean sensitiveData;
     
-    // Quasi-identifier related fields
+    // Risk score between 0-1 (higher means more risk)
+    private Double riskScore;
+    
+    // New fields for quasi-identifier information
     private boolean isQuasiIdentifier;
-    private double quasiIdentifierRiskScore;
-    private String quasiIdentifierType;
-    private List<String> correlatedColumns;
+    private Double quasiIdentifierRiskScore;
+    @Builder.Default
+    private List<String> correlatedColumns = new ArrayList<>();
+    
+    // Field for clustering method used for QI detection
+    private String clusteringMethod;
 }

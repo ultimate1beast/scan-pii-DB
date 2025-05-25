@@ -183,6 +183,18 @@ public class DatabaseConnectorImpl implements DatabaseConnector {
     }
     
     /**
+     * Returns the count of active database connections.
+     * 
+     * @return The number of currently active database connections
+     */
+    @Override
+    public int getActiveConnectionCount() {
+        // Remove any closed datasources first to get accurate count
+        dataSources.entrySet().removeIf(entry -> entry.getValue().isClosed());
+        return dataSources.size();
+    }
+    
+    /**
      * Creates a HikariConfig object from the provided DatabaseConnectionInfo
      */
     private HikariConfig createHikariConfig(DatabaseConnectionInfo connectionInfo) {

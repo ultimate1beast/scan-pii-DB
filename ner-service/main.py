@@ -43,9 +43,21 @@ except:
 
 # Focused on direct PII types only (not quasi-identifiers)
 pii_entity_types = [
-    "person", "organization", "phone number", "email", "credit card number", 
-    "social security number", "passport number", "driver's license number",
-    "identity card number", "national id number", "bank account number"
+    "person", "organization", "phone number", "address", "passport number",
+    "email", "credit card number", "social security number", 
+    "health insurance id number", "date of birth", "mobile phone number",
+    "bank account number", "medication", "cpf", "driver's license number",
+    "tax identification number", "medical condition", "identity card number",
+    "national id number", "ip address", "email address", "iban",
+    "credit card expiration date", "username", "health insurance number",
+    "registration number", "student id number", "insurance number",
+    "flight number", "landline phone number", "blood type", "cvv",
+    "reservation number", "digital signature", "social media handle",
+    "license plate number", "cnpj", "postal code", "serial number",
+    "vehicle registration number", "credit card brand", "fax number",
+    "visa number", "insurance company", "identity document number",
+    "transaction number", "national health insurance number", "cvc",
+    "birth certificate number", "train ticket number", "passport expiration date"
 ]
 
 # Thread pool for parallel processing
@@ -259,7 +271,7 @@ def process_text_sample(text, entity_types, threshold):
     return cached_process_text(text, tuple(entity_types), threshold)
 
 
-def process_batch(texts, entity_types, threshold=0.3):
+def process_batch(texts, entity_types, threshold=0.0):
     """Process a batch of texts at once if the model supports batch processing"""
     global gliner_model
     
@@ -361,7 +373,7 @@ async def detect_entities(request: NerRequest):
                         process_text_sample, 
                         text, 
                         pii_entity_types, 
-                        0.3  # Threshold
+                        0.0  # Threshold changed to 0.0
                     )
                 )
             

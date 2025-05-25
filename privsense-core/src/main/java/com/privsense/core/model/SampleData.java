@@ -104,4 +104,15 @@ public class SampleData {
         entropy = entropyValue;
         return entropyValue;
     }
+    
+    /**
+     * Returns the sample values as a list of strings (for backward compatibility)
+     * 
+     * @return list of sample values converted to strings
+     */
+    public List<String> getSampleValues() {
+        return samples.stream()
+                .map(s -> s != null ? s.toString() : null)
+                .collect(Collectors.toList());
+    }
 }

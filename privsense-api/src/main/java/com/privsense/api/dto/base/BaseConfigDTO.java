@@ -1,5 +1,6 @@
 package com.privsense.api.dto.base;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,7 +15,7 @@ import java.io.Serializable;
  * de manière centralisée.
  */
 @Data
-@SuperBuilder
+@SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
 public abstract class BaseConfigDTO implements Serializable {
@@ -28,10 +29,12 @@ public abstract class BaseConfigDTO implements Serializable {
      * Champ pour indiquer si cette configuration est par défaut.
      * Utile pour différencier les configurations personnalisées des configurations par défaut.
      */
+    @Schema(hidden = true)
     private Boolean isDefault;
     
     /**
      * Nom descriptif optionnel pour cette configuration.
      */
+    @Schema(hidden = true)
     private String configName;
 }

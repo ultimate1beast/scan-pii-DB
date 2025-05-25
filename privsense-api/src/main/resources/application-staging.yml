@@ -1,0 +1,61 @@
+server:
+  port: 8080
+  tomcat:
+    max-threads: 100
+    min-spare-threads: 15
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/privsense_staging
+    username: postgres
+    password: staging_password
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+        show_sql: false
+
+privsense:
+  # Only enable test endpoints in staging for validation purposes
+  test:
+    websocket:
+      enabled: true
+  
+  # WebSocket allowed origins for staging
+  websocket:
+    allowed-origins:
+      - https://staging.yourdomain.com
+      - http://localhost:3000
+  
+  # Staging-optimized settings
+  sampling:
+    default-size: 50
+    max-concurrent-db-queries: 5
+    entropy-calculation-enabled: true
+    default-method: RANDOM
+  
+  # More secure JWT settings for staging
+  jwt:
+    expiration-ms: 3600000  # 1 hour
+    secret-key: staging_only_jwt_secret_key
+    token-blacklist-enabled: true
+    header: Authorization
+    token-prefix: Bearer
+  
+  # Database connection pool settings
+  db:
+    pool:
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      minimum-idle: 5
+      maximum-pool-size: 10
+
+logging:
+  level:
+    root: WARN
+    com.privsense: INFO
+  file:
+    name: ./logs/privsense-staging.log

@@ -1,0 +1,57 @@
+server:
+  port: 8081
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/privsense_test
+    username: postgres
+    password: test_password
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: true
+
+privsense:
+  test:
+    websocket:
+      enabled: true
+  
+  # Optimize for testing
+  sampling:
+    default-size: 10
+    max-concurrent-db-queries: 2
+    entropy-calculation-enabled: false
+    default-method: RANDOM
+  
+  # WebSocket allowed origins for test
+  websocket:
+    allowed-origins:
+      - http://localhost:3000
+      - http://localhost:8081
+  
+  # Shorter token lifetime for tests
+  jwt:
+    expiration-ms: 3600000  # 1 hour
+    secret-key: test_only_jwt_secret_key
+    header: Authorization
+    token-prefix: Bearer
+  
+  # NER service configuration for test
+  ner:
+    service:
+      url: http://localhost:5000/detect-pii
+      timeout-seconds: 10
+  
+  # Test-optimized database pool
+  db:
+    pool:
+      connection-timeout: 5000
+      maximum-pool-size: 5
+
+logging:
+  level:
+    root: WARN
+    com.privsense: INFO
+    org.springframework.test: INFO

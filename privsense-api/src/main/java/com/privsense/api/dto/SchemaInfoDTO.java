@@ -2,6 +2,7 @@ package com.privsense.api.dto;
 
 import com.privsense.api.dto.base.BaseResponseDTO;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -14,7 +15,7 @@ import java.util.List;
  * Standardisé avec l'architecture BaseResponseDTO.
  */
 @Data
-@SuperBuilder
+@SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
@@ -31,7 +32,7 @@ public class SchemaInfoDTO extends BaseResponseDTO {
      * DTO pour représenter les informations d'une table.
      */
     @Data
-    @SuperBuilder
+    @Builder(toBuilder = true)
     @NoArgsConstructor
     @AllArgsConstructor
     public static class TableInfoDTO {
@@ -47,7 +48,7 @@ public class SchemaInfoDTO extends BaseResponseDTO {
      * DTO pour représenter les informations d'une colonne.
      */
     @Data
-    @SuperBuilder
+    @Builder(toBuilder = true)
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ColumnInfoDTO {
@@ -65,7 +66,7 @@ public class SchemaInfoDTO extends BaseResponseDTO {
      * DTO pour représenter une relation entre tables.
      */
     @Data
-    @SuperBuilder
+    @Builder(toBuilder = true)
     @NoArgsConstructor
     @AllArgsConstructor
     public static class RelationshipDTO {

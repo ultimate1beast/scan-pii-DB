@@ -1,5 +1,4 @@
 server:
-  port: 8080
   servlet:
     context-path: /privsense
 
@@ -8,51 +7,48 @@ spring:
     name: privsense
   main:
     allow-bean-definition-overriding: true
-    
-  # Database Configuration
-  datasource:
-    url: jdbc:postgresql://localhost:5432/privsense
-    username: postgres
-    password: pass123
-    driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 10
-      minimum-idle: 5
-      idle-timeout: 30000
-      connection-timeout: 20000
-  
-  # JPA Configuration
-  jpa:
-    # Remove explicit dialect - let Hibernate auto-detect it
-    hibernate:
-      ddl-auto: create
-    properties:
-      hibernate:
-        format_sql: false
-        show_sql: false
-    open-in-view: false
 
-# PrivSense specific configurations
+# SpringDoc OpenAPI Configuration
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    display-request-duration: true
+    groups-order: DESC
+    operationsSorter: method
+    disable-swagger-default-url: true
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+  paths-to-match: /api/v1/**, /websocket/**
+  show-actuator: false
+
 privsense:
+  # Common settings across all environments
   async:
     core-pool-size: 4
     max-pool-size: 8
-    queue-capacity: 100
     thread-name-prefix: privsense-async-
-  
-  sampling:
-    default-size: 30
-    max-concurrent-db-queries: 5
-    entropy-calculation-enabled: true
-    default-method: RANDOM
-  
+
+  # Default WebSocket configuration
+  websocket:
+    enabled: true
+    heartbeat-in: 10000
+    heartbeat-out: 10000
+    allowed-origins: 
+      - "http://localhost:*"
+      - "http://127.0.0.1:*" 
+      - "file://*"
+    buffer-size-limit: 524288  # 512KB
+    message-size-limit: 65536  # 64KB
+
+  # Common detection thresholds
   detection:
     heuristic-threshold: 0.7
     regex-threshold: 0.8
     ner-threshold: 0.6
     reporting-threshold: 0.5
-    stop-pipeline-on-high-confidence: true
-    entropy-enabled: false
     regex:
       pattern-definitions:
         EMAIL_RFC5322:
@@ -79,7 +75,6 @@ privsense:
           pattern: "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b"
           score: 0.7
           pii-type: "IP_ADDRESS"
-        # Additional common PII patterns
         UK_NINO:
           pattern: "\\b[A-CEGHJ-PR-TW-Z]{1}[A-CEGHJ-NPR-TW-Z]{1}[0-9]{6}[A-D]{1}\\b"
           score: 0.95
@@ -104,29 +99,8 @@ privsense:
           pattern: "\\b[-+]?([1-8]?\\d(\\.\\d+)?|90(\\.0+)?),\\s*[-+]?(180(\\.0+)?|((1[0-7]\\d)|([1-9]?\\d))(\\.\\d+)?)\\b"
           score: 0.8
           pii-type: "LOCATION"
-  
-  ner:
-    service:
-      url: http://localhost:5000/detect-pii
-      timeout-seconds: 30
-      circuit-breaker:
-        enabled: true
-        failure-threshold: 5
-        reset-timeout-seconds: 30
-        
-  db:
-    pool:
-      connection-timeout: 30000
-      idle-timeout: 600000
-      max-lifetime: 1800000
-      minimum-idle: 5
-      maximum-pool-size: 10
-    jdbc:
-      driver-dir: ./drivers
 
-logging:
-  level:
-    root: INFO
-    com.privsense: DEBUG
-    org.springframework.web: INFO
-    org.hibernate: INFO
+  # API versioning and documentation
+  api:
+    version: v1.0
+    content-type: application/json;charset=UTF-8

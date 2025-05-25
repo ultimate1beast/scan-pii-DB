@@ -4,6 +4,7 @@ import com.privsense.api.repository.jpa.ScanMetadataJpaRepository;
 import com.privsense.core.model.ScanMetadata;
 import com.privsense.core.repository.ScanMetadataRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
@@ -37,6 +38,21 @@ public class ScanMetadataRepositoryImpl implements ScanMetadataRepository {
     @Override
     public List<ScanMetadata> findAll() {
         return jpaRepository.findAll();
+    }
+    
+    @Override
+    public List<ScanMetadata> findAllPaged(Pageable pageable) {
+        return jpaRepository.findAll(pageable).getContent();
+    }
+    
+    @Override
+    public long count() {
+        return jpaRepository.count();
+    }
+    
+    @Override
+    public void flush() {
+        jpaRepository.flush();
     }
 
     @Override

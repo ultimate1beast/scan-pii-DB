@@ -1,0 +1,65 @@
+server:
+  port: 8080
+  tomcat:
+    max-threads: 200
+    min-spare-threads: 20
+
+spring:
+  datasource:
+    # Use environment variables in production
+    url: ${PRIVSENSE_DB_URL}
+    username: ${PRIVSENSE_DB_USERNAME}
+    password: ${PRIVSENSE_DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 15
+      minimum-idle: 5
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+        show_sql: false
+
+privsense:
+  # Disable test endpoints in production
+  test:
+    websocket:
+      enabled: false
+  
+  # Restrict WebSocket origins
+  websocket:
+    allowed-origins:
+      - https://app.yourdomain.com
+  
+  # Production-optimized settings
+  sampling:
+    default-size: 50
+    max-concurrent-db-queries: 5
+    entropy-calculation-enabled: true
+    default-method: RANDOM
+  
+  # Secure JWT settings
+  jwt:
+    # In production, set via environment variable
+    secret-key: ${PRIVSENSE_JWT_SECRET}
+    expiration-ms: 3600000  # 1 hour
+    token-blacklist-enabled: true
+    header: Authorization
+    token-prefix: Bearer
+  
+  # Database connection pool settings
+  db:
+    pool:
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      minimum-idle: 5
+      maximum-pool-size: 15
+
+logging:
+  level:
+    root: WARN
+    com.privsense: INFO
+  file:
+    name: /var/log/privsense/application.log

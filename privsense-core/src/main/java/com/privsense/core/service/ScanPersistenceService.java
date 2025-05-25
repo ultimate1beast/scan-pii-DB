@@ -4,6 +4,7 @@ import com.privsense.core.model.ComplianceReport;
 import com.privsense.core.model.DetectionResult;
 import com.privsense.core.model.ScanMetadata;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -82,6 +83,31 @@ public interface ScanPersistenceService {
     List<ScanMetadata> getScansByStatus(ScanMetadata.ScanStatus status);
     
     /**
+     * Gets all scans with a specific status for a specific connection.
+     *
+     * @param status The status to filter by
+     * @param connectionId The connection ID to filter by
+     * @return A list of scans matching both filters
+     */
+    List<ScanMetadata> getScansByStatusAndConnectionId(ScanMetadata.ScanStatus status, UUID connectionId);
+    
+    /**
+     * Gets a paginated list of scans.
+     *
+     * @param page The page number (0-based)
+     * @param size The page size
+     * @return A list of scans for the requested page
+     */
+    List<ScanMetadata> getPagedScans(int page, int size);
+    
+    /**
+     * Gets the total count of all scans.
+     *
+     * @return The total number of scan records
+     */
+    long countAllScans();
+    
+    /**
      * Gets all detection results for a scan.
      *
      * @param scanId The ID of the scan
@@ -119,4 +145,21 @@ public interface ScanPersistenceService {
      * @param report The compliance report to save
      */
     void saveReport(UUID scanId, ComplianceReport report);
+    
+    /**
+     * Gets scans within a specified time range.
+     *
+     * @param startTime The start of the time range
+     * @param endTime The end of the time range
+     * @return List of scans with start times within the range
+     */
+    List<ScanMetadata> getScansByTimeRange(Instant startTime, Instant endTime);
+    
+    /**
+     * Gets the most recent scans, ordered by start time.
+     *
+     * @param limit The maximum number of scans to return
+     * @return List of the most recent scans
+     */
+    List<ScanMetadata> getRecentScans(int limit);
 }

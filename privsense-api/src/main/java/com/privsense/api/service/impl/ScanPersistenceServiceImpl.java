@@ -4,6 +4,9 @@ import com.privsense.core.model.*;
 import com.privsense.core.repository.*;
 import com.privsense.core.service.ScanPersistenceService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Service implementation for persisting and retrieving scan results.
@@ -209,6 +213,35 @@ public class ScanPersistenceServiceImpl implements ScanPersistenceService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<ScanMetadata> getScansByStatusAndConnectionId(ScanMetadata.ScanStatus status, UUID connectionId) {
+        // Filter by both status and connection ID
+        return scanRepository.findAll().stream()
+                .filter(scan -> scan.getStatus() == status && scan.getConnectionId().equals(connectionId))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ScanMetadata> getPagedScans(int page, int size) {
+        // Create a pageable request with sorting by most recent first
+        Pageable pageable = PageRequest.of(
+            page, 
+            size, 
+            Sort.by(Sort.Direction.DESC, "startTime")
+        );
+        
+        // Use the Spring Data Pageable interface to get a page of results
+        return scanRepository.findAllPaged(pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countAllScans() {
+        return scanRepository.count();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<DetectionResult> getDetectionResultsByScanId(UUID scanId) {
         return detectionResultRepository.findByScanMetadataId(scanId);
     }
@@ -225,5 +258,32 @@ public class ScanPersistenceServiceImpl implements ScanPersistenceService {
         List<ScanMetadata> scans = scanRepository.findAll();
         log.debug("Retrieved {} scans from the database", scans.size());
         return scans;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ScanMetadata> getScansByTimeRange(Instant startTime, Instant endTime) {
+        log.debug("Getting scans between {} and {}", startTime, endTime);
+        return getAllScans().stream()
+                .filter(scan -> {
+                    Instant scanTime = scan.getStartTime();
+                    return scanTime != null && !scanTime.isBefore(startTime) && !scanTime.isAfter(endTime);
+                })
+                .collect(Collectors.toList());
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<ScanMetadata> getRecentScans(int limit) {
+        log.debug("Getting {} most recent scans", limit);
+        // Get all scans and sort by start time in descending order
+        return getAllScans().stream()
+                .sorted((s1, s2) -> {
+                    if (s1.getStartTime() == null) return 1;
+                    if (s2.getStartTime() == null) return -1;
+                    return s2.getStartTime().compareTo(s1.getStartTime());
+                })
+                .limit(limit)
+                .collect(Collectors.toList());
     }
 }

@@ -29,4 +29,12 @@ public interface PiiDetector {
      * @return List of detection results, one for each column
      */
     List<DetectionResult> detectPii(Map<ColumnInfo, SampleData> columnDataMap);
+      /**
+     * Detects PII in multiple columns with progress callback support.
+     *
+     * @param columnDataMap Map of column info to sample data
+          * @param progressCallback Callback to report progress during detection
+     * @return List of detection results, one for each column
+     */
+    List<DetectionResult> detectPii(Map<ColumnInfo, SampleData> columnDataMap, PiiDetectionProgressCallback progressCallback);
 }

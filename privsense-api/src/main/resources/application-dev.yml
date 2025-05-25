@@ -1,0 +1,76 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/privsense
+    username: postgres
+    password: pass123
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: false
+
+privsense:
+  # Enable test endpoints in dev
+  test:
+    websocket:
+      enabled: true
+  
+  # WebSocket allowed origins for dev
+  websocket:
+    allowed-origins:
+      - http://localhost:3000
+      - http://localhost:8080
+  
+  # Higher sampling for development
+  sampling:
+    default-size: 30
+    max-concurrent-db-queries: 2
+    entropy-calculation-enabled: true
+    default-method: RANDOM
+  
+  # Request metrics configuration
+  metrics:
+    persistence:
+      file: ./metrics-data.ser
+      enabled: true
+      interval: 300000  # 5 minutes in milliseconds
+  
+  # Shorter JWT expiration for easier testing
+  jwt:
+    expiration-ms: 86400000  # 24 hours
+    secret-key: 7D4A6E3B1F8C2D5E9G7H3J5K8L1M6N3P5Q8R2S7T4U6V9W1X3Y5Z8A2B4C7D9
+    header: Authorization
+    token-prefix: Bearer
+  
+  # NER service configuration
+  ner:
+    service:
+      url: http://localhost:5000/detect-pii
+      timeout-seconds: 30
+      circuit-breaker:
+        enabled: true
+        failure-threshold: 5
+        reset-timeout-seconds: 30
+  
+  # Database connection pool settings
+  db:
+    pool:
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      minimum-idle: 5
+      maximum-pool-size: 10
+    jdbc:
+      driver-dir: ./drivers
+
+logging:
+  level:
+    root: INFO
+    com.privsense: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate: INFO

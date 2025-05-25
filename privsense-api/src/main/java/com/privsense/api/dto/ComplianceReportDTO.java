@@ -1,5 +1,6 @@
 package com.privsense.api.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.privsense.api.dto.base.BaseResponseDTO;
 import com.privsense.api.dto.result.DetectionResultDTO;
 import lombok.AllArgsConstructor;
@@ -9,66 +10,91 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
- * Data Transfer Object pour ComplianceReport pour éviter LazyInitializationException
- * et les références circulaires lors de la sérialisation du rapport en JSON.
+ * DTO for compliance report with PII findings.
+ * Restructured to eliminate duplicate data and organize information more logically.
  */
 @Data
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ComplianceReportDTO extends BaseResponseDTO {
+    
+    /**
+     * Scan information section
+     */
+    private ScanInfoDTO scanInfo;
+    
+    /**
+     * Database information section
+     */
+    private DatabaseInfoDTO databaseInfo;
+    
+    /**
+     * Scan summary section with count statistics
+     */
+    private ScanSummaryDTO scanSummary;
+    
+    /**
+     * Summary of PII types detected, organized by category
+     */
+    private PiiTypesDetectedDTO piiTypesDetected;
+    
+    /**
+     * Summary of detection methods used
+     */
+    private Map<String, Integer> detectionMethodsSummary;
+    
+    /**
+     * Main section with PII findings, organized by table
+     */
+    private Map<String, TableFindingsDTO> tableFindings;
+    
+    /**
+     * Scan configuration settings used
+     */
+    private ScanConfigurationDTO scanConfiguration;
 
-    // Core metadata
-    private UUID scanId;
-    private String reportId;
+    /**
+     * Inner class for scan information
+     */
+    @Data
+    @Builder(toBuilder = true)
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ScanInfoDTO {
+        private String scanId;
+        private String reportId;
+        private Object scanStartTime;
+        private Object scanEndTime;
+        private String scanDuration;
+    }
     
-    // Database info
-    private String databaseHost;
-    private String databaseName;
-    private String databaseProductName;
-    private String databaseProductVersion;
-    
-    // Scan statistics
-    private int totalTablesScanned;
-    private int totalColumnsScanned;
-    private int totalPiiColumnsFound;
-    private int totalQuasiIdentifierColumnsFound;
-    private Instant scanStartTime;
-    private Instant scanEndTime;
-    private Duration scanDuration;
-    
-    // Configuration used
-    private Map<String, Object> samplingConfig;
-    private Map<String, Object> detectionConfig;
-    
-    // Summary data
-    private ScanSummaryDTO summary;
-    
-    // PII findings - using DetectionResultDTO to break circular references
-    @Builder.Default
-    private List<DetectionResultDTO> piiFindings = new ArrayList<>();
-    
-    // Quasi-identifier findings
-    @Builder.Default
-    private List<DetectionResultDTO> quasiIdentifierFindings = new ArrayList<>();
-    
-    // Correlated column groups by quasi-identifier type
-    private Map<String, List<List<String>>> correlatedColumnGroups;
+    /**
+     * Inner class for database information
+     */
+    @Data
+    @Builder(toBuilder = true)
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class DatabaseInfoDTO {
+        private String host;
+        private String name;
+        private String product;
+        private String version;
+    }
     
     /**
      * Inner class for scan summary statistics
      */
     @Data
-    @SuperBuilder
+    @Builder(toBuilder = true)
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ScanSummaryDTO {
@@ -76,7 +102,42 @@ public class ComplianceReportDTO extends BaseResponseDTO {
         private int columnsScanned;
         private int piiColumnsFound;
         private int totalPiiCandidates;
-        private int quasiIdentifierColumnsFound;
-        private long scanDurationMillis;
+    }
+    
+    /**
+     * Inner class for summarizing PII types found
+     */
+    @Data
+    @Builder(toBuilder = true)
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PiiTypesDetectedDTO {
+        private Map<String, Integer> directIdentifiers;
+        private Map<String, Integer> sensitiveData;
+        private Map<String, Integer> dateRelated;
+        private int quasiIdentifiers;
+    }
+    
+    /**
+     * Inner class for table-level findings
+     */
+    @Data
+    @Builder(toBuilder = true)
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class TableFindingsDTO {
+        private List<DetectionResultDTO> columns;
+    }
+    
+    /**
+     * Inner class for scan configuration
+     */
+    @Data
+    @Builder(toBuilder = true)
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ScanConfigurationDTO {
+        private Object sampling;
+        private Object detection;
     }
 }

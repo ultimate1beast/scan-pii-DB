@@ -9,8 +9,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 
-import java.util.Arrays;
-import java.util.List;
+
 
 /**
  * Unified configuration properties for PrivSense application.
@@ -37,6 +36,12 @@ public class PrivSenseConfigProperties {
     @Valid
     private final Db db = new Db();
     
+    @Valid
+    private final Reporting reporting = new Reporting();
+    
+    @Valid
+    private final Jwt jwt = new Jwt();
+    
     /**
      * PII detection configuration properties
      */
@@ -45,40 +50,11 @@ public class PrivSenseConfigProperties {
         private double heuristicThreshold = 0.7;
         private double regexThreshold = 0.8;
         private double nerThreshold = 0.6;
-        private double quasiIdentifierThreshold = 0.65;
         private double reportingThreshold = 0.5;
         private boolean stopPipelineOnHighConfidence = true;
         private boolean entropyEnabled = false;
-        private boolean quasiIdentifierEnabled = true;
         
-        @Valid
-        private QuasiIdentifier quasiIdentifier = new QuasiIdentifier();
         
-        @Data
-        public static class QuasiIdentifier {
-            private double confidenceThreshold = 0.65;
-            private double maxDistinctValueRatio = 0.8;
-            private int minDistinctValueCount = 3;
-            private boolean correlationAnalysisEnabled = true;
-            private double minCorrelationCoefficient = 0.7;
-            private int maxCorrelationColumnsToAnalyze = 100;
-            private double lowCardinalityThreshold = 0.05;
-            private double highCardinalityThreshold = 0.8;
-            
-            private List<String> commonQuasiIdentifiers = Arrays.asList(
-                "zip", "zip_code", "postal_code", "post_code", 
-                "gender", "sex", 
-                "birth_date", "date_of_birth", "dob",
-                "age", "year_of_birth", "yob",
-                "race", "ethnicity",
-                "marital_status", "marriage_status",
-                "income", "salary",
-                "education", "education_level",
-                "occupation", "job_title", "profession",
-                "city", "state", "region", "province",
-                "country", "nationality"
-            );
-        }
     }
     
     /**
@@ -103,19 +79,21 @@ public class PrivSenseConfigProperties {
      */
     @Data
     public static class Ner {
+        private boolean enabled = true;
+        
         @Valid
         private Service service = new Service();
         
         @Data
         public static class Service {
             @NotBlank
-            private String url = "http://localhost:8000/detect-pii";
+            private String url = "http://localhost:5000/detect-pii";
             
             @Min(1)
             private int timeoutSeconds = 30;
             
             @Min(1)
-            private int maxSamples = 10;
+            private int maxSamples = 100;
             
             @Min(0)
             private int retryAttempts = 2;
@@ -134,6 +112,17 @@ public class PrivSenseConfigProperties {
                 private int resetTimeoutSeconds = 30;
             }
         }
+    }
+    
+    /**
+     * Report generation configuration properties
+     */
+    @Data
+    public static class Reporting {
+        private boolean pdfEnabled = true;
+        private boolean csvEnabled = true;
+        private boolean textEnabled = true;
+        private String reportOutputPath = "./reports";
     }
     
     /**
@@ -160,5 +149,24 @@ public class PrivSenseConfigProperties {
         public static class Jdbc {
             private String driverDir = "./drivers";
         }
+    }
+    
+    /**
+     * JWT authentication configuration properties
+     */
+    @Data
+    public static class Jwt {
+        @NotBlank
+        private String secretKey = "defaultSecretKeyThatShouldBeOverriddenInProduction";
+        
+        @Min(60000) // Minimum 1 minute
+        private long expirationMs = 3600000; // Default: 1 hour
+        
+        @Min(60000) // Minimum 1 minute
+        private long refreshExpirationMs = 604800000; // Default: 7 days
+        
+        private String issuer = "privsense";
+        
+        private boolean tokenBlacklistEnabled = true;
     }
 }

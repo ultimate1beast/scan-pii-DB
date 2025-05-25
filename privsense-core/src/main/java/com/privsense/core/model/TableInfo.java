@@ -56,9 +56,9 @@ public class TableInfo {
     
     @ToString.Exclude // Prevent recursion in toString
     @EqualsAndHashCode.Exclude // Prevent recursion
-    @ManyToOne
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH})
     @JoinColumn(name = "schema_id")
-    private SchemaInfo schema; // Reference to the parent schema
+    private SchemaInfo schema; // Reference to the parent schema with cascade settings
     
     /**
      * Adds a column to this table and sets this table as the parent of the column

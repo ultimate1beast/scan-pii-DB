@@ -127,6 +127,7 @@ public class JdbcMetadataExtractorImpl implements MetadataExtractor {
                         .tableName(tableName)
                         .tableType(tableType)
                         .remarks(remarks)
+                        .schema(schema)  // Set the schema reference to establish bidirectional relationship
                         .build();
                 
                 schema.addTable(table);
@@ -161,6 +162,7 @@ public class JdbcMetadataExtractorImpl implements MetadataExtractor {
                         .tableName(tableName)
                         .tableType(tableType)
                         .remarks(remarks)
+                        .schema(schema)  // Set the schema reference to establish bidirectional relationship
                         .build();
                 
                 schema.addTable(table);
@@ -182,13 +184,21 @@ public class JdbcMetadataExtractorImpl implements MetadataExtractor {
     private void extractColumns(Connection connection, TableInfo table) throws SQLException {
         DatabaseMetaData metaData = connection.getMetaData();
         
+        // Add debugging to trace column extraction
+        logger.debug("Extracting columns for table: {}", table.getTableName());
+        logger.debug("Using catalog: {}, schema: {}", 
+                table.getSchema().getCatalogName(), 
+                table.getSchema().getSchemaName());
+        
         try (ResultSet rs = metaData.getColumns(
                 table.getSchema().getCatalogName(), 
                 table.getSchema().getSchemaName(), 
                 table.getTableName(), 
                 null)) {
             
+            int columnCount = 0;
             while (rs.next()) {
+                columnCount++;
                 String columnName = rs.getString("COLUMN_NAME");
                 int dataType = rs.getInt("DATA_TYPE");
                 String typeName = rs.getString("TYPE_NAME");
@@ -196,6 +206,9 @@ public class JdbcMetadataExtractorImpl implements MetadataExtractor {
                 int decimalDigits = rs.getInt("DECIMAL_DIGITS");
                 int nullable = rs.getInt("NULLABLE");
                 String remarks = rs.getString("REMARKS");
+                
+                logger.debug("Found column: {} (type: {}) in table {}", 
+                        columnName, typeName, table.getTableName());
                 
                 ColumnInfo column = ColumnInfo.builder()
                         .columnName(columnName)
@@ -210,6 +223,8 @@ public class JdbcMetadataExtractorImpl implements MetadataExtractor {
                 
                 table.addColumn(column);
             }
+            
+            logger.debug("Extracted {} columns for table {}", columnCount, table.getTableName());
         }
     }
     

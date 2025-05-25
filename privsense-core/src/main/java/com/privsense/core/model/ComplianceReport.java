@@ -18,7 +18,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * Final output of the PII scanning process, containing all findings and metadata.
@@ -158,12 +157,7 @@ public class ComplianceReport {
     @Transient
     private List<DetectionResult> piiFindings;
     
-    /**
-     * Quasi-identifier findings (columns identified as quasi-identifiers)
-     */
-    @Transient
-    private List<DetectionResult> quasiIdentifierFindings;
-
+    
     /**
      * Update the scan duration based on start and end times.
      * This method should be called after setting scan start or end times.
@@ -172,6 +166,14 @@ public class ComplianceReport {
         if (scanStartTime != null && scanEndTime != null) {
             scanDuration = Duration.between(scanStartTime, scanEndTime);
         }
+    }
+    
+    /**
+     * Initializes the transient scan duration field after loading from the database.
+     * This should be called after loading a report from the database.
+     */
+    public void initializeScanDuration() {
+        updateScanDuration();
     }
 
     /**
@@ -248,41 +250,9 @@ public class ComplianceReport {
         return findings;
     }
     
-    /**
-     * Returns a list of all quasi-identifier findings.
-     * 
-     * @return List of detection results identified as quasi-identifiers
-     */
-    public List<DetectionResult> getQuasiIdentifierFindings() {
-        if (quasiIdentifierFindings != null) {
-            return quasiIdentifierFindings;
-        }
-        
-        if (detectionResults == null) {
-            return new ArrayList<>();
-        }
-        
-        // Filter detection results for those that are quasi-identifiers
-        List<DetectionResult> findings = new ArrayList<>();
-        for (DetectionResult result : detectionResults) {
-            if (result.hasQuasiIdentifierRisk()) {
-                findings.add(result);
-            }
-        }
-        
-        return findings;
-    }
+   
     
-    /**
-     * Returns a sorted list of quasi-identifier findings, ordered by risk score (highest first).
-     * 
-     * @return Sorted list of quasi-identifier findings
-     */
-    public List<DetectionResult> getSortedQuasiIdentifierFindings() {
-        List<DetectionResult> findings = getQuasiIdentifierFindings();
-        findings.sort(Comparator.comparing(DetectionResult::getQuasiIdentifierRiskScore).reversed());
-        return findings;
-    }
+   
     
     /**
      * Returns a sorted list of PII findings, ordered by confidence score (highest first).
@@ -295,27 +265,7 @@ public class ComplianceReport {
         return findings;
     }
     
-    /**
-     * Get a map of correlated columns grouped by quasi-identifier type
-     * 
-     * @return Map of quasi-identifier type to list of column groups
-     */
-    public Map<String, List<List<String>>> getCorrelatedColumnGroups() {
-        return getQuasiIdentifierFindings().stream()
-            .filter(result -> result.getCorrelatedColumns() != null && !result.getCorrelatedColumns().isEmpty())
-            .collect(Collectors.groupingBy(
-                DetectionResult::getQuasiIdentifierType,
-                Collectors.mapping(
-                    result -> {
-                        List<String> group = new ArrayList<>();
-                        group.add(result.getColumnInfo().getColumnName());
-                        group.addAll(result.getCorrelatedColumns());
-                        return group;
-                    },
-                    Collectors.toList()
-                )
-            ));
-    }
+   
     
     /**
      * Inner class for scan summary statistics
@@ -340,6 +290,9 @@ public class ComplianceReport {
         
         @Column(name = "qi_columns_found")
         private int quasiIdentifierColumnsFound;
+        
+        @Column(name = "summary_qi_groups_found")
+        private int quasiIdentifierGroupsFound;
         
         @Column(name = "scan_duration_millis")
         private long scanDurationMillis;

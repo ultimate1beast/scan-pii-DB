@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import lombok.Builder;
 
 import java.util.UUID;
 
@@ -33,5 +34,6 @@ public class SamplingRequest extends BaseRequestDTO {
     private String columnName;
     
     @Valid
+    @Builder.Default
     private SamplingConfigDTO config = new SamplingConfigDTO();
 }

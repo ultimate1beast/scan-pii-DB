@@ -55,9 +55,9 @@ public class ColumnInfo {
     
     @ToString.Exclude // Prevent recursion in toString
     @EqualsAndHashCode.Exclude // Prevent recursion
-    @ManyToOne
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH})
     @JoinColumn(name = "table_id")
-    private TableInfo table; // Reference to the parent table
+    private TableInfo table; // Reference to the parent table with cascade settings
     
     /**
      * Returns a fully qualified name for the column (table.column format)

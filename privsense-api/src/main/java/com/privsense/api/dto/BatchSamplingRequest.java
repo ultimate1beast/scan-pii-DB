@@ -10,9 +10,9 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import lombok.Builder;
 
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -29,24 +29,9 @@ public class BatchSamplingRequest extends BaseRequestDTO {
     private UUID connectionId;
     
     @Valid
+    @Builder.Default
     private SamplingConfigDTO defaultConfig = new SamplingConfigDTO();
     
     @NotEmpty(message = "Au moins une table doit être spécifiée")
     private List<TableSamplingRequest> tables;
-    
-    /**
-     * Configuration de l'échantillonnage pour une table spécifique.
-     */
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class TableSamplingRequest {
-        @NotNull(message = "Le nom de la table est requis")
-        private String tableName;
-        
-        @NotEmpty(message = "Au moins une colonne doit être spécifiée")
-        private Set<String> columnNames;
-        
-        private Integer sampleSize; // Remplace la configuration par défaut si non null
-    }
 }

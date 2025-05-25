@@ -1,5 +1,6 @@
 package com.privsense.core.model;
 
+import com.privsense.core.config.QuasiIdentifierConfig;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

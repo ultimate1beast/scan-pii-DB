@@ -1,166 +1,197 @@
 # PrivSense NER Service
 
-This service provides Named Entity Recognition (NER) capabilities for the PrivSense application, specializing in detecting Personally Identifiable Information (PII) in text.
+The NER (Named Entity Recognition) service is a crucial component of the PrivSense system that provides accurate detection of personally identifiable information (PII) in text data. This microservice uses advanced NLP techniques through the GLiNER model to identify sensitive information across multiple domains and languages.
 
 ## Overview
 
-The NER service uses the GLiNER model from E3-JSI specifically fine-tuned for PII entity detection. It exposes a REST API that accepts text samples and returns detected entities with their types and confidence scores.
+The NER service is a FastAPI-based REST API that exposes endpoints for PII detection in text. It uses the GLiNER (Generic Labeler for In-line Named Entity Recognition) model from E3-JSI to identify a wide range of PII entities such as names, addresses, phone numbers, credit card numbers, and many other sensitive data types.
 
 ## Features
 
-- Fast and efficient PII detection using GLiNER model
-- Support for multiple languages
-- RESTful API for easy integration
-- Health check endpoint for monitoring
-- Local model caching to avoid repeated downloads
-- Docker support for easy deployment
+- **High-accuracy PII detection**: Leverages state-of-the-art transformer-based models to accurately identify over 50 types of PII entities
+- **Optimized performance**: Implements batch processing, parallel execution, and caching mechanisms for high throughput
+- **Containerized deployment**: Easy deployment through Docker
+- **Robust error handling**: Comprehensive error handling and reporting
+- **Health monitoring**: Dedicated endpoint for monitoring service health
 
-## PII Types Detected
+## Supported PII Types
 
-The service can detect a wide range of PII types including but not limited to:
+The service detects numerous PII entity types, including but not limited to:
+
 - Person names
-- Organizations
-- Addresses
-- Phone numbers
+- Organization names
+- Phone numbers (mobile and landline)
 - Email addresses
-- Social Security Numbers
-- Credit card information
-- Medical information
+- Physical addresses
+- Credit card numbers
+- Social security numbers
+- Passport numbers
+- Driver's license numbers
+- Health insurance IDs
+- Dates of birth
+- IP addresses
+- Bank account numbers
+- National ID numbers
+- Medical conditions
 - And many more
 
-## Setup and Installation
+## API Endpoints
 
-### Prerequisites
-
-- Python 3.8+
-- pip
-- Virtual environment (recommended)
-
-### Local Setup
-
-1. Create and activate a virtual environment (recommended):
-   ```
-   python -m venv venv
-   venv\Scripts\activate  # On Windows
-   source venv/bin/activate  # On Linux/Mac
-   ```
-
-2. Install dependencies:
-   ```
-   pip install -r requirements.txt
-   ```
-
-3. Download the model:
-   ```
-   python preload_model.py
-   ```
-
-4. Start the service:
-   ```
-   python main.py --model-path "models\E3-JSI_gliner-multi-pii-domains-v1" --use-windows-certs --threads 8
-   ```
-
-   Or use the provided batch file:
-   ```
-   start.bat
-   ```
-
-### Docker Setup
-
-1. Build the Docker image:
-   ```
-   docker build -t privsense-ner:latest .
-   ```
-
-2. Run the container:
-   ```
-   docker run -p 5000:5000 privsense-ner:latest
-   ```
-
-## API Usage
-
-### Health Check
-
-```
-GET /health
-```
-
-Response:
-```json
-{
-  "status": "ok",
-  "model_loaded": true,
-  "model_path": "models/E3-JSI_gliner-multi-pii-domains-v1"
-}
-```
-
-### Detect PII Entities
+### 1. PII Detection
 
 ```
 POST /detect-pii
 ```
 
-Request body:
+Detects PII entities in provided text samples.
+
+**Request Body:**
 ```json
 {
-  "samples": [
-    "My name is John Smith and my email is john.smith@example.com",
-    "Credit card: 4111-1111-1111-1111, expires on 12/25"
-  ]
+  "samples": ["Text sample 1", "Text sample 2", ...]
 }
 ```
 
-Response:
+**Response:**
 ```json
 {
   "results": [
     [
       {
-        "text": "John Smith",
+        "text": "John Doe",
         "type": "PER",
         "score": 0.98
       },
-      {
-        "text": "john.smith@example.com",
-        "type": "EMAIL",
-        "score": 0.99
-      }
+      ...
     ],
-    [
-      {
-        "text": "4111-1111-1111-1111",
-        "type": "CREDIT_CARD",
-        "score": 0.95
-      },
-      {
-        "text": "12/25",
-        "type": "CREDIT_CARD_EXPIRATION_DATE",
-        "score": 0.89
-      }
-    ]
+    ...
   ]
 }
 ```
 
-## Integration with Java NerClientStrategy
+### 2. Health Check
 
-This service is designed to work seamlessly with the `NerClientStrategy` component in the PrivSense Java application. The service implements the expected API contract:
+```
+GET /detect-pii/health
+```
 
-1. The `/detect-pii` endpoint accepts a list of text samples
-2. It returns entities with text, type, and score properties
-3. Entity types are mapped to match the expected format in the Java code
-4. The endpoint includes proper error handling
+Returns service health status.
+
+**Response:**
+```json
+{
+  "status": "ok",
+  "model_loaded": true,
+  "model_path": "models/E3-JSI_gliner-multi-pii-domains-v1",
+  "worker_pid": 12345
+}
+```
+
+## Setup and Installation
+
+### Prerequisites
+
+- Python 3.10+
+- Docker (optional)
+
+### Local Installation
+
+1. Clone the repository and navigate to the `ner-service` directory
+
+2. Install the required packages:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Download the GLiNER model:
+   ```bash
+   python preload_model.py
+   ```
+
+4. Start the service:
+   ```bash
+   python main.py --model-path models/E3-JSI_gliner-multi-pii-domains-v1
+   ```
+
+   Or with additional parameters:
+   ```bash
+   python main.py --model-path models/E3-JSI_gliner-multi-pii-domains-v1 --host 0.0.0.0 --port 5000 --threads 8 --workers 2
+   ```
+
+### Docker Deployment
+
+1. Build the Docker image:
+   ```bash
+   docker build -t privsense/ner-service .
+   ```
+
+2. Run the container:
+   ```bash
+   docker run -p 5000:5000 privsense/ner-service
+   ```
+
+## Configuration Options
+
+The service accepts the following command-line arguments:
+
+| Argument | Description | Default |
+|----------|-------------|---------|
+| `--model-path` | Path to local model directory | Required (unless `--model-id` is specified) |
+| `--model-id` | Hugging Face model ID for downloading | Required (unless `--model-path` is specified) |
+| `--host` | Host IP to bind the service | 0.0.0.0 |
+| `--port` | Port number to bind the service | 5000 |
+| `--threads` | Number of worker threads for parallel processing | 8 |
+| `--workers` | Number of Uvicorn worker processes | 1 |
+| `--use-windows-certs` | Use Windows certificate store for SSL verification | False |
+
+## Performance Optimization
+
+The service implements several performance optimizations:
+- **Thread pool**: Parallel processing of text samples using a configurable thread pool
+- **Caching**: In-memory LRU cache for repeated text analysis
+- **Batch processing**: Efficient batch processing when supported by the model
+- **Multiprocessing support**: Shared memory for coordination between worker processes
+
+## Integration with PrivSense
+
+This NER service integrates with the PrivSense Java ecosystem through RESTful API calls. The module is primarily used by the `privsense-pii-detector` component to analyze text data and identify sensitive information.
+
+## Quickstart with pre-built model
+
+For quick testing, you can use the included batch script:
+```bash
+start.bat
+```
+
+This will start the service using the pre-downloaded model on the default port (5000).
+
+## Technical Details
+
+### Model
+
+The service uses the E3-JSI/gliner-multi-pii-domains-v1 model, which is a specialized version of GLiNER for multi-domain PII detection. The model is automatically downloaded during the Docker build process or can be manually downloaded using the `preload_model.py` script.
+
+### Architecture
+
+The service follows a microservice architecture pattern:
+- **FastAPI framework**: Provides the RESTful API interface
+- **Uvicorn server**: ASGI server for handling HTTP requests
+- **GLiNER model**: Core NLP engine for entity recognition
+- **Thread pool**: Manages concurrent processing of requests
 
 ## Troubleshooting
 
-Common issues:
+### Common Issues
 
-1. **Model download fails**: Check your internet connection and proxy settings. The model is about 1.2GB.
-2. **Service starts but model isn't loading**: Check for sufficient disk space and memory.
-3. **SSL certificate errors**: Use the `--use-windows-certs` flag on Windows systems.
+1. **Model loading failures**  
+   Check that you have sufficient disk space and memory. The GLiNER model requires approximately 500MB of disk space.
 
-## Performance Considerations
+2. **Slow processing time**  
+   Adjust the `--threads` and `--workers` parameters based on your hardware capabilities.
 
-- The service uses a single worker to avoid loading multiple instances of the model in memory
-- For production usage with high throughput, consider running multiple instances behind a load balancer
-- GPU acceleration is recommended for faster inference if available
+3. **SSL certificate errors**  
+   On Windows systems, you might encounter SSL certificate errors when downloading the model. Use the `--use-windows-certs` flag to resolve this.
+
+## License
+
+[License information would go here]
